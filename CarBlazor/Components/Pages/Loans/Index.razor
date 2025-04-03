@@ -1,9 +1,11 @@
 @page "/loans"
 @attribute [Authorize]
+@using System.Globalization
 @using CarBlazor.Data
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
+@using CarBlazor.Components.Search
 @inject CarBlazorContext Context
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -12,6 +14,8 @@
 <PageTitle>Loans</PageTitle>
 
 <h1>Loans</h1>
+
+<Search Placeholder="Search loans..." OnSearch="HandleSearch" />
 
 <p>
     <a href="loans/create" class="btn btn-primary">Create New</a>
@@ -70,14 +74,45 @@
 </style>
 
 @code {
+    private List<Loan>? AllLoans { get; set; }
     private List<Loan>? Loans { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        AllLoans = await Context.Loan
+            .Include(l => l.Car)
+            .Include(s => s.Status)
+            .ToListAsync();
         Loans = await Context.Loan
             .Include(l => l.Car)
             .Include(s => s.Status)
             .ToListAsync();
+    }
+    
+    private void HandleSearch(string searchTerm)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            Loans = AllLoans;
+            return;
+        }
+        
+        var normalizedSearchTerm = searchTerm
+            .Replace("$", "")
+            .Replace(",", "")
+            .Replace("%", "")
+            .Trim();
+
+        Loans = AllLoans?
+            .Where(l => 
+                l.Status != null && l.Status.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                l.StartDate.ToShortDateString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                l.EndDate.ToShortDateString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                l.Amount.ToString("C").Replace(",", "").Contains(normalizedSearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                l.InterestRate.ToString("P2").Replace("%", "").Contains(normalizedSearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                l.MonthlyPayment.ToString("C").Replace(",", "").Contains(normalizedSearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                l.RemainingBalance.ToString("C").Replace(",", "").Contains(normalizedSearchTerm, StringComparison.OrdinalIgnoreCase))
+            .ToList();
     }
     
     private void ViewDetails(int id)

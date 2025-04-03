@@ -1,9 +1,11 @@
 @page "/warranties"
 @attribute [Authorize]
+@using System.Globalization
 @using CarBlazor.Data
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
+@using CarBlazor.Components.Search
 @inject CarBlazorContext Context
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -12,6 +14,8 @@
 <PageTitle>Warranties</PageTitle>
 
 <h1>Warranties</h1>
+
+<Search Placeholder="Search warranties..." OnSearch="HandleSearch" />
 
 <p>
     <a href="warranties/create" class="btn btn-primary">Create New</a>
@@ -70,14 +74,47 @@
 </style>
 
 @code {
+    private List<Warranty>? AllWarranties { get; set; }
     private List<Warranty>? Warranties { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        AllWarranties = await Context.Warranty
+            .Include(w => w.Car)
+            .Include(w => w.WarrantyType)
+            .ToListAsync();
         Warranties = await Context.Warranty
             .Include(w => w.Car)
             .Include(w => w.WarrantyType)
             .ToListAsync();
+    }
+    
+    private void HandleSearch(string searchTerm)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            Warranties = AllWarranties;
+            return;
+        }
+        
+        var normalizedSearchTerm = searchTerm
+            .Replace("$", "")
+            .Replace(",", "")
+            .Replace("%", "")
+            .Trim();
+    
+        Warranties = AllWarranties?
+            .Where(w => 
+                (w.Car != null && (
+                    (w.Car.Make != null && w.Car.Make.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                    (w.Car.Model != null && w.Car.Model.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                    w.Car.Year.ToString().Contains(searchTerm))) ||
+                (w.WarrantyType != null && w.WarrantyType.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                (w.Provider != null && w.Provider.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                w.StartDate.ToShortDateString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                w.EndDate.ToShortDateString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                w.Cost.ToString("C").Replace(",", "").Contains(normalizedSearchTerm, StringComparison.OrdinalIgnoreCase))
+            .ToList();
     }
 
     private void ViewDetails(int id)

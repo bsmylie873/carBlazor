@@ -1,0 +1,36 @@
+<div class="search-container mb-3">
+    <div class="input-group">
+        <span class="input-group-text">
+            <i class="bi bi-search"></i>
+        </span>
+        <input type="text" class="form-control" placeholder="@Placeholder"
+               @bind-value="SearchTerm" @bind-value:event="oninput" @onkeyup="OnSearchTermChanged" />
+        @if (!string.IsNullOrEmpty(SearchTerm))
+        {
+            <button class="btn btn-outline-secondary" @onclick="ClearSearch">
+                <i class="bi bi-x"></i>
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Placeholder { get; set; } = "Search...";
+    
+    [Parameter]
+    public EventCallback<string> OnSearch { get; set; }
+    
+    private string SearchTerm { get; set; } = string.Empty;
+    
+    private async Task OnSearchTermChanged()
+    {
+        await OnSearch.InvokeAsync(SearchTerm);
+    }
+    
+    private async Task ClearSearch()
+    {
+        SearchTerm = string.Empty;
+        await OnSearch.InvokeAsync(SearchTerm);
+    }
+}

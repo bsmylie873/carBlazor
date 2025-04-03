@@ -119,3 +119,7 @@
         overflow-y: auto;
     }
 }
+
+.search-container {
+    max-width: 400px;
+}

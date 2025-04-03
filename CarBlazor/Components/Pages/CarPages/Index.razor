@@ -4,6 +4,7 @@
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
+@using CarBlazor.Components.Search
 @inject CarBlazorContext Context
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -12,6 +13,8 @@
 <PageTitle>Cars</PageTitle>
 
 <h1>Cars</h1>
+
+<Search Placeholder="Search cars..." OnSearch="HandleSearch" />
 
 <p>
     <a href="cars/create" class="btn btn-primary">Create New</a>
@@ -69,10 +72,30 @@
 
 @code {
     private List<Car>? Cars { get; set; }
-
+    private List<Car>? AllCars { get; set; }
+    
     protected override async Task OnInitializedAsync()
     {
+        AllCars = await Context.Car.ToListAsync();
         Cars = await Context.Car.ToListAsync();
+    }
+    
+    private void HandleSearch(string searchTerm)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            Cars = AllCars;
+            return;
+        }
+
+        Cars = AllCars?
+            .Where(c => 
+                c is { Make: not null, Model: not null, Color: not null } 
+                && (c.Make.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    c.Model.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    c.Color.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    c.Year.ToString().Contains(searchTerm)))
+            .ToList();
     }
 
     private void ViewDetails(int id)
@@ -95,5 +118,4 @@
             }
         }
     }
-
 }
