@@ -1,0 +1,151 @@
+@page "/warranties/edit/{Id:int}"
+@attribute [Authorize]
+@using CarBlazor.Data
+@using CarBlazor.Models
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@inject CarBlazorContext Context
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Edit Warranty</PageTitle>
+
+<h1>Edit</h1>
+
+<h4>Warranty</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        @if (Warranty != null)
+        {
+            <EditForm Model="@Warranty" OnValidSubmit="UpdateWarranty">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <input type="hidden" @bind-value="Warranty.Id" />
+
+                <div class="form-group mb-3">
+                    <label for="carId">Car</label>
+                    <InputSelect id="carId" @bind-Value="Warranty.CarId" class="form-control">
+                        @if (Cars != null)
+                        {
+                            @foreach (var car in Cars)
+                            {
+                                <option value="@car.Id">@($"{car.Make} {car.Model} ({car.Year})")</option>
+                            }
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => Warranty.CarId)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="warrantyTypeId">Warranty Type</label>
+                    <InputSelect id="warrantyTypeId" @bind-Value="Warranty.WarrantyTypeId" class="form-control">
+                        @if (WarrantyTypes != null)
+                        {
+                            @foreach (var type in WarrantyTypes)
+                            {
+                                <option value="@type.Id">@type.Name</option>
+                            }
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => Warranty.WarrantyTypeId)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="provider">Provider</label>
+                    <InputText id="provider" @bind-Value="Warranty.Provider" class="form-control" />
+                    <ValidationMessage For="@(() => Warranty.Provider)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="startDate">Start Date</label>
+                    <InputDate id="startDate" @bind-Value="Warranty.StartDate" class="form-control" />
+                    <ValidationMessage For="@(() => Warranty.StartDate)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="endDate">End Date</label>
+                    <InputDate id="endDate" @bind-Value="Warranty.EndDate" class="form-control" />
+                    <ValidationMessage For="@(() => Warranty.EndDate)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="coverageDetails">Coverage Details</label>
+                    <InputTextArea id="coverageDetails" @bind-Value="Warranty.CoverageDetails" class="form-control" rows="3" />
+                    <ValidationMessage For="@(() => Warranty.CoverageDetails)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="cost">Cost</label>
+                    <InputNumber id="cost" @bind-Value="Warranty.Cost" class="form-control" />
+                    <ValidationMessage For="@(() => Warranty.Cost)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" @onclick="GoBack">Back to List</button>
+                </div>
+            </EditForm>
+        }
+        else
+        {
+            <p>Loading...</p>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Warranty? Warranty { get; set; }
+    private List<Car>? Cars { get; set; }
+    private List<WarrantyType>? WarrantyTypes { get; set; }
+    private int? OriginalCarId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Warranty = await Context.Warranty.FindAsync(Id);
+        
+        if (Warranty == null)
+        {
+            Navigation.NavigateTo("warranties");
+            return;
+        }
+        
+        OriginalCarId = Warranty.CarId;
+        Cars = await Context.Car.ToListAsync();
+        WarrantyTypes = await Context.WarrantyType.ToListAsync();
+    }
+
+    private async Task UpdateWarranty()
+    {
+        if (Warranty != null)
+        {
+            Context.Update(Warranty);
+            await Context.SaveChangesAsync();
+            
+            if (OriginalCarId.HasValue)
+            {
+                Navigation.NavigateTo($"cars/details/{OriginalCarId.Value}");
+            }
+            else
+            {
+                Navigation.NavigateTo("warranties");
+            }
+        }
+    }
+
+    private void GoBack()
+    {
+        if (OriginalCarId.HasValue)
+        {
+            Navigation.NavigateTo($"cars/details/{OriginalCarId.Value}");
+        }
+        else
+        {
+            Navigation.NavigateTo("warranties");
+        }
+    }
+}

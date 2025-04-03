@@ -1,0 +1,75 @@
+@page "/customers/create"
+@attribute [Authorize]
+@using CarBlazor.Data
+@using CarBlazor.Models
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@inject CarBlazorContext Context
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Create Customer</PageTitle>
+
+<h1>Create</h1>
+
+<h4>Customer</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm Model="@Customer" OnValidSubmit="CreateCustomer">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            
+            <div class="form-group mb-3">
+                <label for="first_name">First Name</label>
+                <InputText id="first_name" @bind-Value="Customer.FirstName" class="form-control" />
+                <ValidationMessage For="@(() => Customer.FirstName)" />
+            </div>
+            
+            <div class="form-group mb-3">
+                <label for="last_name">Last Name</label>
+                <InputText id="last_name" @bind-Value="Customer.LastName" class="form-control" />
+                <ValidationMessage For="@(() => Customer.LastName)" />
+            </div>
+            
+            <div class="form-group mb-3">
+                <label for="email">Email</label>
+                <InputText id="email" @bind-Value="Customer.Email" class="form-control" />
+                <ValidationMessage For="@(() => Customer.Email)" />
+            </div>
+            
+            <div class="form-group mb-3">
+                <label for="phone_number">Phone Number</label>
+                <InputText id="phone_number" @bind-Value="Customer.PhoneNumber" class="form-control" />
+                <ValidationMessage For="@(() => Customer.PhoneNumber)" />
+            </div>
+            
+            <div class="form-group mb-3">
+                <label for="productionDate">Address</label>
+                <InputText id="productionDate" @bind-Value="Customer.Address" class="form-control" />
+                <ValidationMessage For="@(() => Customer.Address)" />
+            </div>
+            
+            <div class="form-group mb-3">
+                <button type="submit" class="btn btn-primary">Create</button>
+                <button type="button" class="btn btn-secondary" @onclick="GoBack">Back to List</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private Customer Customer { get; set; } = new();
+
+    private async Task CreateCustomer()
+    {
+        Context.Customer.Add(Customer);
+        await Context.SaveChangesAsync();
+        Navigation.NavigateTo("customers");
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("customers");
+    }
+}

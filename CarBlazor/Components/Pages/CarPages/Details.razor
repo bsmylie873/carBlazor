@@ -1,0 +1,123 @@
+@page "/cars/details/{Id:int}"
+@attribute [Authorize]
+@using CarBlazor.Data
+@using CarBlazor.Models
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@inject CarBlazorContext Context
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Car Details</PageTitle>
+
+<h1>Details</h1>
+
+<div>
+    <hr />
+    @if (Car != null)
+    {
+        <dl class="row">
+            <dt class="col-sm-2">Make</dt>
+            <dd class="col-sm-10">@Car.Make</dd>
+            
+            <dt class="col-sm-2">Model</dt>
+            <dd class="col-sm-10">@Car.Model</dd>
+            
+            <dt class="col-sm-2">Year</dt>
+            <dd class="col-sm-10">@Car.Year</dd>
+            
+            <dt class="col-sm-2">Color</dt>
+            <dd class="col-sm-10">@Car.Color</dd>
+            
+            <dt class="col-sm-2">Production Date</dt>
+            <dd class="col-sm-10">@Car.ProductionDate</dd>
+        </dl>
+        
+        <h4>
+            Warranties
+            @if (Warranties != null)
+            {
+                <span class="badge bg-primary">@Warranties.Count</span>
+            }
+        </h4>
+        <hr />
+        
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Type</th>
+                <th>Provider</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Coverage Details</th>
+                <th>Cost</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            @if (Warranties != null && Warranties.Any())
+            {
+                @foreach (var warranty in Warranties)
+                {
+                    <tr>
+                        <td>@warranty.WarrantyType?.Name</td>
+                        <td>@warranty.Provider</td>
+                        <td>@warranty.StartDate.ToShortDateString()</td>
+                        <td>@warranty.EndDate.ToShortDateString()</td>
+                        <td>@warranty.CoverageDetails</td>
+                        <td>@warranty.Cost.ToString("C")</td>
+                        <td>
+                            <a href="@($"warranties/edit/{warranty.Id}")" class="btn btn-sm btn-primary">Edit</a> |
+                            <a href="@($"warranties/details/{warranty.Id}")" class="btn btn-sm btn-info">Details</a> |
+                            <a href="@($"warranties/delete/{warranty.Id}")" class="btn btn-sm btn-danger">Delete</a>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="7">No warranties found for this car</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+        
+        <div>
+            <a class="btn btn-primary" href="@($"cars/edit/{Car.Id}")">Edit</a> |
+            <button class="btn btn-secondary" @onclick="GoBack">Back to List</button>
+        </div>
+    }
+    else
+    {
+        <p>Loading...</p>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Car? Car { get; set; }
+    private List<Warranty>? Warranties { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Car = await Context.Car.FindAsync(Id);
+        
+        if (Car == null)
+        {
+            Navigation.NavigateTo("cars");
+        }
+        
+        Warranties = await Context.Warranty
+            .Include(w => w.WarrantyType)
+            .Where(w => w.CarId == Id)
+            .ToListAsync();
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("cars");
+    }
+}

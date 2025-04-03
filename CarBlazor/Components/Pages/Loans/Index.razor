@@ -1,0 +1,106 @@
+@page "/loans"
+@attribute [Authorize]
+@using CarBlazor.Data
+@using CarBlazor.Models
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@inject CarBlazorContext Context
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>Loans</PageTitle>
+
+<h1>Loans</h1>
+
+<p>
+    <a href="loans/create" class="btn btn-primary">Create New</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Car</th>
+            <th>Amount</th>
+            <th>Interest Rate</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Loans != null)
+        {
+            @foreach (var loan in Loans)
+            {
+                <tr @onclick="() => ViewDetails(loan.Id)" class="clickable-row">
+                    <td>@($"{loan.Car?.Make} {loan.Car?.Model} ({loan.Car?.Year})")</td>
+                    <td>@loan.Amount.ToString("C")</td>
+                    <td>@loan.InterestRate.ToString("P2")</td>
+                    <td>@loan.StartDate.ToShortDateString()</td>
+                    <td>@loan.EndDate.ToShortDateString()</td>
+                    <td>@loan.Status?.Name</td>
+                    <td>
+                        <button @onclick:stopPropagation="true" @onclick="() => DeleteConfirm(loan.Id)"
+                                class="btn btn-sm btn-link text-danger">
+                            <i class="bi bi-trash fs-5"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="7">Loading...</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<style>
+    .clickable-row {
+        cursor: pointer;
+    }
+
+    .clickable-row:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+
+@code {
+    private List<Loan>? Loans { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Loans = await Context.Loan
+            .Include(l => l.Car)
+            .Include(s => s.Status)
+            .ToListAsync();
+    }
+    
+    private void ViewDetails(int id)
+    {
+        Navigation.NavigateTo($"loans/details/{id}");
+    }
+
+    private async Task DeleteConfirm(int id)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this loan?");
+
+        if (confirmed)
+        {
+            var loan = await Context.Loan.FindAsync(id);
+            if (loan != null)
+            {
+                Context.Loan.Remove(loan);
+                await Context.SaveChangesAsync();
+                Loans = await Context.Loan
+                    .Include(l => l.Car)
+                    .Include(s => s.Status)
+                    .ToListAsync();
+            }
+        }
+    }
+}

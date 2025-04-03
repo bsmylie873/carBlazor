@@ -1,0 +1,116 @@
+@page "/customers/details/{Id:int}"
+@attribute [Authorize]
+@using CarBlazor.Data
+@using CarBlazor.Models
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@inject CarBlazorContext Context
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Car Details</PageTitle>
+
+<h1>Details</h1>
+
+<div>
+    <h4>Customer</h4>
+    <hr />
+    @if (Customer != null)
+    {
+        <dl class="row">
+            <dt class="col-sm-2">First Name</dt>
+            <dd class="col-sm-10">@Customer.FirstName</dd>
+            
+            <dt class="col-sm-2">Last Name</dt>
+            <dd class="col-sm-10">@Customer.LastName</dd>
+            
+            <dt class="col-sm-2">Email</dt>
+            <dd class="col-sm-10">@Customer.Email</dd>
+            
+            <dt class="col-sm-2">Phone Number</dt>
+            <dd class="col-sm-10">@Customer.PhoneNumber</dd>
+            
+            <dt class="col-sm-2">Address</dt>
+            <dd class="col-sm-10">@Customer.Address</dd>
+        </dl>
+        
+                
+        <h4>Customer Cars</h4>
+        <hr />
+
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Make</th>
+                <th>Model</th>
+                <th>Year</th>
+                <th>Purchase Date</th>
+                <th>Primary Owner</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            @if (CustomerCars != null && CustomerCars.Any())
+            {
+                @foreach (var customerCar in CustomerCars)
+                {
+                    <tr>
+                        <td>@customerCar.Car?.Make</td>
+                        <td>@customerCar.Car?.Model</td>
+                        <td>@customerCar.Car?.Year</td>
+                        <td>@customerCar.PurchaseDate.ToShortDateString()</td>
+                        <td>@(customerCar.IsPrimaryOwner ? "Yes" : "No")</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="6">No cars associated with this customer</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+        
+        <div>
+            <a class="btn btn-primary" href="@($"customers/edit/{Customer.Id}")">Edit</a> |
+            <button class="btn btn-secondary" @onclick="GoBack">Back to List</button>
+        </div>
+    }
+    else
+    {
+        <p>Loading...</p>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Customer? Customer { get; set; }
+    private List<CustomerCar>? CustomerCars { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Customer = await Context.Customer.FindAsync(Id);
+        
+        if (Customer == null)
+        {
+            Navigation.NavigateTo("customers");
+        }
+        await LoadCustomerCarsAndAvailableCars();
+    }
+    
+    private async Task LoadCustomerCarsAndAvailableCars()
+    {
+        CustomerCars = await Context.CustomerCar
+            .Include(cc => cc.Car)
+            .Where(cc => cc.CustomerId == Id)
+            .ToListAsync();
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("customers");
+    }
+}

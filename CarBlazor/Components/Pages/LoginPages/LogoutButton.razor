@@ -1,0 +1,13 @@
+@using CarBlazor.Services
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+
+<button @onclick="LogoutAsync" class="btn btn-outline-danger">Logout</button>
+
+@code {
+    private async Task LogoutAsync()
+    {
+        await AuthService.LogoutAsync();
+        NavigationManager.NavigateTo("/login");
+    }
+}

@@ -1,0 +1,138 @@
+@page "/loans/edit/{Id:int}"
+@attribute [Authorize]
+@using CarBlazor.Data
+@using CarBlazor.Models
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@inject CarBlazorContext Context
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Edit Loan</PageTitle>
+
+<h1>Edit</h1>
+
+<h4>Loan</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        @if (Loan != null)
+        {
+            <EditForm Model="@Loan" OnValidSubmit="UpdateLoan">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <input type="hidden" @bind-value="Loan.Id" />
+
+                <div class="form-group mb-3">
+                    <label for="carId">Car</label>
+                    <InputSelect id="carId" @bind-Value="Loan.CarId" class="form-control">
+                        @if (Cars != null)
+                        {
+                            @foreach (var car in Cars)
+                            {
+                                <option value="@car.Id">@($"{car.Make} {car.Model} ({car.Year})")</option>
+                            }
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => Loan.CarId)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="amount">Amount</label>
+                    <InputNumber id="amount" @bind-Value="Loan.Amount" class="form-control" />
+                    <ValidationMessage For="@(() => Loan.Amount)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="interestRate">Interest Rate</label>
+                    <InputNumber id="interestRate" @bind-Value="Loan.InterestRate" class="form-control" />
+                    <small class="form-text text-muted">Enter as decimal (e.g., 0.05 for 5%)</small>
+                    <ValidationMessage For="@(() => Loan.InterestRate)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="startDate">Start Date</label>
+                    <InputDate id="startDate" @bind-Value="Loan.StartDate" class="form-control" />
+                    <ValidationMessage For="@(() => Loan.StartDate)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="endDate">End Date</label>
+                    <InputDate id="endDate" @bind-Value="Loan.EndDate" class="form-control" />
+                    <ValidationMessage For="@(() => Loan.EndDate)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="monthlyPayment">Monthly Payment</label>
+                    <InputNumber id="monthlyPayment" @bind-Value="Loan.MonthlyPayment" class="form-control" />
+                    <ValidationMessage For="@(() => Loan.MonthlyPayment)" />
+                </div>
+                
+                <div class="form-group mb-3">
+                    <label for="loanStatusId">Loan Status</label>
+                    <InputSelect id="loanStatusId" @bind-Value="Loan.StatusId" class="form-control">
+                        @if (LoanStatuses != null)
+                        {
+                            @foreach (var type in LoanStatuses)
+                            {
+                                <option value="@type.Id">@type.Name</option>
+                            }
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => Loan.Status)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" @onclick="GoBack">Back to List</button>
+                </div>
+            </EditForm>
+        }
+        else
+        {
+            <p>Loading...</p>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Loan? Loan { get; set; }
+    private List<Car>? Cars { get; set; }
+    private List<LoanStatus>? LoanStatuses { get; set; }
+    private int? OriginalCarId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Loan = await Context.Loan.FindAsync(Id);
+        LoanStatuses = await Context.LoanStatus.ToListAsync();
+
+        if (Loan == null)
+        {
+            Navigation.NavigateTo("loans");
+            return;
+        }
+
+        OriginalCarId = Loan.CarId;
+        Cars = await Context.Car.ToListAsync();
+    }
+
+    private async Task UpdateLoan()
+    {
+        if (Loan != null)
+        {
+            Context.Update(Loan);
+            await Context.SaveChangesAsync();
+
+            Navigation.NavigateTo(OriginalCarId.HasValue ? $"cars/details/{OriginalCarId.Value}" : "loans");
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo(OriginalCarId.HasValue ? $"cars/details/{OriginalCarId.Value}" : "loans");
+    }
+}

@@ -1,0 +1,230 @@
+@page "/customers/edit/{Id:int}"
+@attribute [Authorize]
+@using CarBlazor.Data
+@using CarBlazor.Models
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@inject CarBlazorContext Context
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Edit Customer</PageTitle>
+
+<h1>Edit</h1>
+
+<h4>Customer</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        @if (Customer != null)
+        {
+            <EditForm Model="@Customer" OnValidSubmit="UpdateCustomer">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <input type="hidden" @bind-value="Customer.Id" />
+
+                <div class="form-group mb-3">
+                    <label for="first_name">First Name</label>
+                    <InputText id="first_name" @bind-Value="Customer.FirstName" class="form-control" />
+                    <ValidationMessage For="@(() => Customer.FirstName)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="last_name">Last Name</label>
+                    <InputText id="last_name" @bind-Value="Customer.LastName" class="form-control" />
+                    <ValidationMessage For="@(() => Customer.LastName)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="email">Email</label>
+                    <InputText id="email" @bind-Value="Customer.Email" class="form-control" />
+                    <ValidationMessage For="@(() => Customer.Email)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="phone_number">Phone Number</label>
+                    <InputText id="phone_number" @bind-Value="Customer.PhoneNumber" class="form-control" />
+                    <ValidationMessage For="@(() => Customer.PhoneNumber)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="address">Address</label>
+                    <InputText id="address" @bind-Value="Customer.Address" class="form-control" />
+                    <ValidationMessage For="@(() => Customer.Address)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" @onclick="GoBack">Back to List</button>
+                </div>
+            </EditForm>
+        }
+        else
+        {
+            <p>Loading...</p>
+        }
+    </div>
+</div>
+
+<h4>Customer Cars</h4>
+<hr />
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Make</th>
+            <th>Model</th>
+            <th>Year</th>
+            <th>Purchase Date</th>
+            <th>Primary Owner</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (CustomerCars != null && CustomerCars.Any())
+        {
+            @foreach (var customerCar in CustomerCars)
+            {
+                <tr>
+                    <td>@customerCar.Car?.Make</td>
+                    <td>@customerCar.Car?.Model</td>
+                    <td>@customerCar.Car?.Year</td>
+                    <td>@customerCar.PurchaseDate.ToShortDateString()</td>
+                    <td>@(customerCar.IsPrimaryOwner ? "Yes" : "No")</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" @onclick="() => RemoveCarFromCustomer(customerCar)">Remove</button>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="6">No cars associated with this customer</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h4>Add Car to Customer</h4>
+<div class="row">
+    <div class="col-md-6">
+        <EditForm Model="@newCustomerCar" OnValidSubmit="AddCarToCustomer">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group mb-3">
+                <label for="car">Select Car</label>
+                <InputSelect id="car" @bind-Value="newCustomerCar.CarId" class="form-control">
+                    <option value="0">-- Select a Car --</option>
+                    @if (AvailableCars != null)
+                    {
+                        @foreach (var car in AvailableCars)
+                        {
+                            <option value="@car.Id">@car.Make @car.Model (@car.Year)</option>
+                        }
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="purchaseDate">Purchase Date</label>
+                <InputDate id="purchaseDate" @bind-Value="newCustomerCar.PurchaseDate" class="form-control" />
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="isPrimaryOwner" class="form-check-label">
+                    <InputCheckbox id="isPrimaryOwner" @bind-Value="newCustomerCar.IsPrimaryOwner" class="form-check-input" />
+                    Primary Owner
+                </label>
+            </div>
+
+            <div class="form-group mb-3">
+                <button type="submit" class="btn btn-primary" disabled="@(newCustomerCar.CarId == 0)">Add Car</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Customer? Customer { get; set; }
+    private List<CustomerCar>? CustomerCars { get; set; }
+    private List<Car>? AvailableCars { get; set; }
+    private CustomerCar newCustomerCar = new CustomerCar
+    {
+        PurchaseDate = DateTime.Today,
+        IsPrimaryOwner = false
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load customer with their cars
+        Customer = await Context.Customer
+            .FirstOrDefaultAsync(c => c.Id == Id);
+
+        if (Customer == null)
+        {
+            Navigation.NavigateTo("customers");
+            return;
+        }
+
+        await LoadCustomerCarsAndAvailableCars();
+    }
+
+    private async Task UpdateCustomer()
+    {
+        Context.Update(Customer);
+        await Context.SaveChangesAsync();
+        Navigation.NavigateTo($"customers/details/{Id}");
+    }
+
+    private async Task LoadCustomerCarsAndAvailableCars()
+    {
+        CustomerCars = await Context.CustomerCar
+            .Include(cc => cc.Car)
+            .Where(cc => cc.CustomerId == Id)
+            .ToListAsync();
+
+        var customerCarIds = CustomerCars.Select(cc => cc.CarId).ToList();
+
+        AvailableCars = await Context.Car
+            .Where(c => !customerCarIds.Contains(c.Id))
+            .ToListAsync();
+    }
+
+    private async Task AddCarToCustomer()
+    {
+        if (newCustomerCar.CarId == 0) return;
+
+        newCustomerCar.CustomerId = Id;
+
+        await Context.CustomerCar.AddAsync(newCustomerCar);
+        await Context.SaveChangesAsync();
+
+        // Reset form and reload data
+        newCustomerCar = new CustomerCar
+        {
+            PurchaseDate = DateTime.Today,
+            IsPrimaryOwner = false
+        };
+
+        await LoadCustomerCarsAndAvailableCars();
+    }
+
+    private async Task RemoveCarFromCustomer(CustomerCar customerCar)
+    {
+        Context.CustomerCar.Remove(customerCar);
+        await Context.SaveChangesAsync();
+
+        await LoadCustomerCarsAndAvailableCars();
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("customers");
+    }
+}

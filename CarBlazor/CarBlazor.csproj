@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RootNamespace>CarBlazor</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.3">
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PrivateAssets>all</PrivateAssets>
+      </PackageReference>
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.3" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.14" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.14">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Components\Pages\CarPages\Create.cshtml" />
+      <_ContentIncludedByDefault Remove="Components\Pages\CarPages\Delete.cshtml" />
+      <_ContentIncludedByDefault Remove="Components\Pages\CarPages\Details.cshtml" />
+      <_ContentIncludedByDefault Remove="Components\Pages\CarPages\Edit.cshtml" />
+      <_ContentIncludedByDefault Remove="Components\Pages\CarPages\Index.cshtml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <AdditionalFiles Include="Components\Pages\CustomerPages\Create.razor" />
+      <AdditionalFiles Include="Components\Pages\CustomerPages\Delete.razor" />
+      <AdditionalFiles Include="Components\Pages\CustomerPages\Details.razor" />
+      <AdditionalFiles Include="Components\Pages\CustomerPages\Edit.razor" />
+      <AdditionalFiles Include="Components\Pages\CustomerPages\Index.razor" />
+    </ItemGroup>
+
+</Project>

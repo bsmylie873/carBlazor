@@ -1,0 +1,114 @@
+﻿@page "/"
+@using CarBlazor.Data
+@using Microsoft.EntityFrameworkCore
+@inject CarBlazorContext Context
+@rendermode InteractiveServer
+
+<PageTitle>Car Dealership Management</PageTitle>
+
+<div class="dealership-home">
+    <div class="header-section">
+        <p class="lead">Your complete solution for managing inventory, customers, loans, and warranties</p>
+    </div>
+
+    <div class="stats-section">
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Cars</h5>
+                        <p class="card-text display-4">@(CarsCount)</p>
+                        <a href="cars" class="btn btn-light">View Inventory</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Customers</h5>
+                        <p class="card-text display-4">@(CustomersCount)</p>
+                        <a href="customers" class="btn btn-light">View Customers</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Loans</h5>
+                        <p class="card-text display-4">@(LoansCount)</p>
+                        <a href="loans" class="btn btn-light">View Loans</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Warranties</h5>
+                        <p class="card-text display-4">@(WarrantiesCount)</p>
+                        <a href="warranties" class="btn btn-light">View Warranties</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="quick-links mt-4">
+        <h2>Quick Actions</h2>
+        <div class="row mt-3">
+            <div class="col-md-3">
+                <a href="cars/create" class="btn btn-outline-primary btn-lg w-100">
+                    <span>🚗</span> Add New Car
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="customers/create" class="btn btn-outline-success btn-lg w-100">
+                    <span>👤</span> Add New Customer
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="loans/create" class="btn btn-outline-info btn-lg w-100">
+                    <span>💰</span> Create New Loan
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="warranties/create" class="btn btn-outline-warning btn-lg w-100">
+                    <span>🛡️</span> Create Warranty
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="video-section mt-4">
+        <h2>Dealership Showcase</h2>
+        <p class="dealership-blurb mb-3">
+            Welcome to our premier automotive experience, where exceptional service meets
+            unmatched selection. For over 20 years, we've proudly served our community with
+            award-winning customer satisfaction, competitive financing options, and comprehensive
+            warranty coverage. Our team of certified experts is dedicated to helping you find
+            your perfect vehicle match. Discover why we're rated #1 in customer loyalty!
+        </p>
+        <div class="video-container">
+            <iframe
+                src="https://www.youtube.com/embed/vppGAbd7aYA"
+                title="Dealership Video"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+            </iframe>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int CarsCount { get; set; }
+    private int CustomersCount { get; set; }
+    private int LoansCount { get; set; }
+    private int WarrantiesCount { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CarsCount = await Context.Car.CountAsync();
+        CustomersCount = await Context.Customer.CountAsync();
+        LoansCount = await Context.Loan.CountAsync();
+        WarrantiesCount = await Context.Warranty.CountAsync();
+    }
+}

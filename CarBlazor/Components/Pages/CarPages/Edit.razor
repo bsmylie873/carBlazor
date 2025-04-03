@@ -1,0 +1,165 @@
+@page "/cars/edit/{Id:int}"
+@attribute [Authorize]
+@using CarBlazor.Data
+@using CarBlazor.Models
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@inject CarBlazorContext Context
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Edit Car</PageTitle>
+
+<h1>Edit</h1>
+
+<h4>Car</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        @if (Car != null)
+        {
+            <EditForm Model="@Car" OnValidSubmit="UpdateCar">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <input type="hidden" @bind-value="Car.Id" />
+
+                <div class="form-group mb-3">
+                    <label for="make">Make</label>
+                    <InputText id="make" @bind-Value="Car.Make" class="form-control" />
+                    <ValidationMessage For="@(() => Car.Make)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="model">Model</label>
+                    <InputText id="model" @bind-Value="Car.Model" class="form-control" />
+                    <ValidationMessage For="@(() => Car.Model)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="year">Year</label>
+                    <InputNumber id="year" @bind-Value="Car.Year" class="form-control" />
+                    <ValidationMessage For="@(() => Car.Year)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="color">Color</label>
+                    <InputText id="color" @bind-Value="Car.Color" class="form-control" />
+                    <ValidationMessage For="@(() => Car.Color)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="productionDate">Production Date</label>
+                    <InputDate id="productionDate" @bind-Value="Car.ProductionDate" class="form-control" />
+                    <ValidationMessage For="@(() => Car.ProductionDate)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" @onclick="GoBack">Back to List</button>
+                </div>
+            </EditForm>
+        }
+        else
+        {
+            <p>Loading...</p>
+        }
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <h4>
+            Warranties
+            @if (Warranties != null)
+            {
+                <span class="badge bg-primary">@Warranties.Count</span>
+            }
+        </h4>
+        <hr />
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Provider</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Coverage Details</th>
+                    <th>Cost</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Warranties != null && Warranties.Any())
+                {
+                    @foreach (var warranty in Warranties)
+                    {
+                        <tr>
+                            <td>@warranty.WarrantyType?.Name</td>
+                            <td>@warranty.Provider</td>
+                            <td>@warranty.StartDate.ToShortDateString()</td>
+                            <td>@warranty.EndDate.ToShortDateString()</td>
+                            <td>@warranty.CoverageDetails</td>
+                            <td>@warranty.Cost.ToString("C")</td>
+                            <td>
+                                <a href="@($"warranties/edit/{warranty.Id}")" class="btn btn-sm btn-primary">Edit</a> |
+                                <a href="@($"warranties/details/{warranty.Id}")" class="btn btn-sm btn-info">Details</a> |
+                                <a href="@($"warranties/delete/{warranty.Id}")" class="btn btn-sm btn-danger">Delete</a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7">No warranties found for this car</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="mb-3">
+            <a href="@($"warranties/create/{Id}")" class="btn btn-success">Add Warranty</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Car? Car { get; set; }
+    private List<Warranty>? Warranties { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Car = await Context.Car.FindAsync(Id);
+
+        if (Car == null)
+        {
+            Navigation.NavigateTo("cars");
+            return;
+        }
+        
+        Warranties = await Context.Warranty
+            .Include(w => w.WarrantyType)
+            .Where(w => w.CarId == Id)
+            .ToListAsync();
+    }
+
+    private async Task UpdateCar()
+    {
+        if (Car != null)
+        {
+            Context.Update(Car);
+            await Context.SaveChangesAsync();
+            Navigation.NavigateTo("cars");
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("cars");
+    }
+}
