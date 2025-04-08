@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using CarBlazor.Services;
+using CarBlazor.ViewModels;
 
 namespace CarBlazor.Controllers
 {
@@ -9,36 +11,20 @@ namespace CarBlazor.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromForm] string username, [FromForm] string password, [FromForm] bool rememberMe)
+        private readonly AuthService _authService;
+
+        public AccountController(AuthService authService)
         {
-            // Validate credentials (replace with real logic)
-            if (username == "admin" && password == "password")
-            {
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, username),
-                    new Claim(ClaimTypes.Role, "Admin"),
-                };
-
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var authProperties = new AuthenticationProperties
-                {
-                    IsPersistent = rememberMe,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7)
-                };
-
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity),
-                    authProperties);
-
-                return Redirect("/");
-            }
-
-            return Redirect("/login?error=true");
+            _authService = authService;
         }
-
+        
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromForm] LoginViewModel model)
+        {
+            var result = await _authService.LoginAsync(model.Username, model.Password, model.RememberMe);
+            return result ? Redirect("/") : Redirect("/login?error=true");
+        }
+        
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {

@@ -1,0 +1,121 @@
+@page "/admin/users"
+@attribute [Authorize(Roles = "Admin")]
+@using CarBlazor.Data
+@using CarBlazor.Models
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using CarBlazor.Components.Search
+@inject CarBlazorContext Context
+@inject NavigationManager Navigation
+@inject IJSRuntime JsRuntime
+@rendermode InteractiveServer
+
+<PageTitle>Users</PageTitle>
+
+<h1>Users</h1>
+
+<Search Placeholder="Search users..." OnSearch="HandleSearch" />
+
+<p>
+    <a href="/admin/users/create" class="btn btn-primary">Create New</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Created At</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Users != null)
+        {
+            @foreach (var user in Users)
+            {
+                <tr @onclick="() => ViewDetails(user.Id)" class="clickable-row">
+                    <td>@user.Username</td>
+                    <td>@user.Role.Name</td>
+                    <td>@user.CreatedAt.ToLocalTime().ToString("g")</td>
+                    <td>
+                        <button @onclick:stopPropagation="true" @onclick="() => DeleteConfirm(user.Id)"
+                                class="btn btn-sm btn-link text-danger">
+                            <i class="bi bi-trash fs-5"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="4">Loading...</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<style>
+    .clickable-row {
+        cursor: pointer;
+    }
+
+    .clickable-row:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+
+@code {
+    private List<User>? AllUsers { get; set; }
+    private List<User>? Users { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        AllUsers = await Context.Users
+            .Include(u => u.Role)
+            .ToListAsync();
+        Users = AllUsers;
+    }
+
+    private void HandleSearch(string searchTerm)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            Users = AllUsers;
+            return;
+        }
+
+        Users = AllUsers?
+            .Where(u => 
+                u.Username.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                u.Role.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                u.CreatedAt.ToString("g").Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    private void ViewDetails(int id)
+    {
+        Navigation.NavigateTo($"admin/users/{id}");
+    }
+
+    private async Task DeleteConfirm(int id)
+    {
+        var confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this user?");
+
+        if (confirmed)
+        {
+            var user = await Context.Users.FindAsync(id);
+            if (user != null)
+            {
+                Context.Users.Remove(user);
+                await Context.SaveChangesAsync();
+                
+                AllUsers = await Context.Users
+                    .Include(u => u.Role)
+                    .ToListAsync();
+                Users = AllUsers;
+            }
+        }
+    }
+}

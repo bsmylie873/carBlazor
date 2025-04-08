@@ -1,8 +1,5 @@
 ﻿@inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Authorization
-@using CarBlazor.Services
-@inject AuthService AuthService
-@inject NavigationManager NavigationManager
 
 <div class="page">
     <div class="sidebar">
@@ -17,11 +14,16 @@
             <div class="ms-auto d-flex align-items-center">
                 <AuthorizeView>
                     <Authorized>
-                        <form method="post" action="/api/account/logout" class="d-inline">
-                            <button type="submit" class="btn btn-outline-danger btn-sm">
-                                <span class="me-1"></span> Logout
-                            </button>
-                        </form>
+                        <div class="d-flex gap-2">
+                            <a href="/account/profile" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-person"></i> @context.User.Identity?.Name
+                            </a>
+                            <form method="post" action="/api/account/logout" class="d-inline">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-box-arrow-right"></i> Logout
+                                </button>
+                            </form>
+                        </div>
                     </Authorized>
                     <NotAuthorized>
                         <a href="/login" class="btn btn-primary btn-sm">
@@ -67,12 +69,3 @@
         margin-top: 2rem;
     }
 </style>
-
-@code {
-    private async Task LogoutAsync()
-    {
-        await AuthService.LogoutAsync();
-        NavigationManager.NavigateTo("/login");
-    }
-
-}

@@ -13,9 +13,10 @@ public class AuthService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly CarBlazorContext _context;
 
-    public AuthService(IHttpContextAccessor httpContextAccessor)
+    public AuthService(IHttpContextAccessor httpContextAccessor, CarBlazorContext context)
     {
         _httpContextAccessor = httpContextAccessor;
+        _context = context;
     }
 
     public async Task<bool> LoginAsync(string username, string password, bool rememberMe)
@@ -25,8 +26,7 @@ public class AuthService
             .FirstOrDefaultAsync(u => u.Username == username);
 
         if (user == null) return false;
-
-        // Verify password hash
+        
         if (!VerifyPassword(password, user.PasswordHash, user.Salt)) 
             return false;
 
@@ -54,6 +54,30 @@ public class AuthService
     public async Task LogoutAsync()
     {
         await _httpContextAccessor.HttpContext!.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    }
+    
+    public async Task<(bool Success, string Message)> ChangePasswordAsync(int userId, string currentPassword, string newPassword)
+    {
+        try
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                return (false, "User not found.");
+
+            if (!VerifyPassword(currentPassword, user.PasswordHash, user.Salt))
+                return (false, "Current password is incorrect.");
+            
+            (user.PasswordHash, user.Salt) = HashPassword(newPassword);
+        
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+        
+            return (true, "Password changed successfully.");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Error changing password: {ex.Message}");
+        }
     }
     
     public async Task<bool> RegisterUserAsync(string username, string password, string roleId)

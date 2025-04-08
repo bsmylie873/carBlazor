@@ -1,0 +1,120 @@
+@page "/admin/users/create"
+@attribute [Authorize(Roles = "Admin")]
+@using System.ComponentModel.DataAnnotations
+@using CarBlazor.Data
+@using CarBlazor.Models
+@using CarBlazor.ViewModels
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@inject CarBlazorContext Context
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Create User</PageTitle>
+
+<h1>Create User</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <EditForm Model="@ViewModel" OnValidSubmit="@HandleValidSubmit">
+            <DataAnnotationsValidator/>
+            <ValidationSummary/>
+
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <InputText id="username" @bind-Value="ViewModel.Username" class="form-control"/>
+                <ValidationMessage For="@(() => ViewModel.Username)"/>
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <InputText id="password" @bind-Value="Password" type="password" class="form-control"/>
+                <ValidationMessage For="@(() => Password)"/>
+            </div>
+
+            <div class="mb-3">
+                <label for="confirmPassword" class="form-label">Confirm Password</label>
+                <InputText id="confirmPassword" @bind-Value="ConfirmPassword" type="password" class="form-control"/>
+                <ValidationMessage For="@(() => ConfirmPassword)"/>
+            </div>
+
+            <div class="mb-3">
+                <label for="role" class="form-label">Role</label>
+                <InputSelect id="role" @bind-Value="ViewModel.RoleId" class="form-select">
+                    @if (Roles != null)
+                    {
+                        @foreach (var role in Roles)
+                        {
+                            <option value="@role.Id">@role.Name</option>
+                        }
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => ViewModel.RoleId)"/>
+            </div>
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Create</button>
+                <a href="/users" class="btn btn-secondary">Cancel</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private CreateUserViewModel ViewModel { get; set; } = new();
+    private List<Role>? Roles { get; set; }
+
+    [Required(ErrorMessage = "Password is required")]
+    [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters")]
+    private string Password { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Confirm Password is required")]
+    [Compare(nameof(Password), ErrorMessage = "Passwords do not match")]
+    private string ConfirmPassword { get; set; } = string.Empty;
+
+    private string? ErrorMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Roles = await Context.Roles
+            .Where(r => r.Id != "Admin")
+            .ToListAsync();
+        
+        ViewModel.RoleId = "User";
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            var existingUser = await Context.Users
+                .FirstOrDefaultAsync(u => u.Username == ViewModel.Username);
+
+            if (existingUser != null)
+            {
+                ErrorMessage = "Username already exists.";
+                return;
+            }
+            
+            var (hash, salt) = Utilities.Authentication.HashPassword(Password);
+            
+            var user = new User
+            {
+                Username = ViewModel.Username,
+                RoleId = ViewModel.RoleId,
+                PasswordHash = hash,
+                Salt = salt,
+                CreatedAt = DateTime.UtcNow
+            };
+            
+            Context.Users.Add(user);
+            await Context.SaveChangesAsync();
+
+            Navigation.NavigateTo("/admin/users");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error creating user: {ex.Message}";
+        }
+    }
+}

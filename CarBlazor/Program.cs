@@ -2,9 +2,11 @@ using CarBlazor.Components;
 using Microsoft.EntityFrameworkCore;
 using CarBlazor.Data;
 using CarBlazor.Services;
+using CarBlazor.ViewModels;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<CarBlazorContext>(options =>
@@ -50,5 +52,4 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 app.MapRazorPages();
-
 app.Run();
