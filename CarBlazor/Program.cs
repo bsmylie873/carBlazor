@@ -8,22 +8,29 @@ using Microsoft.AspNetCore.Components.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<CarBlazorContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("BlazorApp2Context") ?? 
+    options.UseSqlite(builder.Configuration.GetConnectionString("CarBlazorContext") ?? 
                      "Data Source=CarBlazor.db"));
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddRazorPages();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<AuthService>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options => 
     {
         options.LoginPath = "/login";
         options.AccessDeniedPath = "/access-denied";
     });
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("UserOrAdmin", policy => 
+        policy.RequireRole("User", "Admin"));
+});
 builder.Services.AddScoped<AuthenticationStateProvider, ServerAuthenticationStateProvider>();
 builder.Services.AddControllers();
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
