@@ -3,11 +3,11 @@
 @using CarBlazor.Data
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
 @using CarBlazor.Components.Search
-@inject CarBlazorContext Context
+@using CarBlazor.Services
+@inject CarService CarService
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
+@inject IJSRuntime JsRuntime
 @rendermode InteractiveServer
 
 <PageTitle>Cars</PageTitle>
@@ -72,30 +72,30 @@
 
 @code {
     private List<Car>? Cars { get; set; }
-    private List<Car>? AllCars { get; set; }
-    
+    private string? ErrorMessage { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
-        AllCars = await Context.Car.ToListAsync();
-        Cars = await Context.Car.ToListAsync();
-    }
-    
-    private void HandleSearch(string searchTerm)
-    {
-        if (string.IsNullOrWhiteSpace(searchTerm))
+        try
         {
-            Cars = AllCars;
-            return;
+            Cars = await CarService.GetCarsAsync();
         }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading cars: {ex.Message}";
+        }
+    }
 
-        Cars = AllCars?
-            .Where(c => 
-                c is { Make: not null, Model: not null, Color: not null } 
-                && (c.Make.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                    c.Model.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                    c.Color.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                    c.Year.ToString().Contains(searchTerm)))
-            .ToList();
+    private async Task HandleSearch(string searchTerm)
+    {
+        try
+        {
+            Cars = await CarService.SearchCarsAsync(searchTerm);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error searching cars: {ex.Message}";
+        }
     }
 
     private void ViewDetails(int id)
@@ -105,17 +105,27 @@
 
     private async Task DeleteConfirm(int id)
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this car?");
-
-        if (confirmed)
+        try
         {
-            var car = await Context.Car.FindAsync(id);
-            if (car != null)
+            var confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this car?");
+
+            if (confirmed)
             {
-                Context.Car.Remove(car);
-                await Context.SaveChangesAsync();
-                Cars = await Context.Car.ToListAsync();
+                var success = await CarService.DeleteCarAsync(id);
+                if (success)
+                {
+                    Cars = await CarService.GetCarsAsync();
+                    ErrorMessage = null;
+                }
+                else
+                {
+                    ErrorMessage = "Failed to delete car. It may no longer exist.";
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error deleting car: {ex.Message}";
         }
     }
 }

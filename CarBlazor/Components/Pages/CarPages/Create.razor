@@ -1,9 +1,9 @@
 @page "/cars/create"
-@attribute [Authorize(Roles = "Admin,User")]
-@using CarBlazor.Data
+    @attribute [Authorize(Roles = "Admin,User")]
 @using CarBlazor.Models
+@using CarBlazor.Services
 @using Microsoft.AspNetCore.Authorization
-@inject CarBlazorContext Context
+@inject CarService CarService
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -62,8 +62,7 @@
 
     private async Task CreateCar()
     {
-        Context.Car.Add(Car);
-        await Context.SaveChangesAsync();
+        await CarService.CreateCarAsync(Car);
         Navigation.NavigateTo("cars");
     }
 

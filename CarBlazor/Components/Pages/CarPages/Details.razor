@@ -1,10 +1,10 @@
 @page "/cars/details/{Id:int}"
 @attribute [Authorize(Roles = "Admin,User")]
-@using CarBlazor.Data
 @using CarBlazor.Models
+@using CarBlazor.Services
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
-@inject CarBlazorContext Context
+@inject CarService CarService
+@inject WarrantyService WarrantyService
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -100,20 +100,31 @@
 
     private Car? Car { get; set; }
     private List<Warranty>? Warranties { get; set; }
+    private bool IsLoading { get; set; } = true;
+    private string? ErrorMessage { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        Car = await Context.Car.FindAsync(Id);
-        
-        if (Car == null)
+        try
         {
-            Navigation.NavigateTo("cars");
+            Car = await CarService.GetCarByIdAsync(Id);
+
+            if (Car == null)
+            {
+                ErrorMessage = $"Car with ID {Id} not found.";
+                return;
+            }
+            
+            Warranties = await WarrantyService.GetWarrantiesForCarAsync(Id);
         }
-        
-        Warranties = await Context.Warranty
-            .Include(w => w.WarrantyType)
-            .Where(w => w.CarId == Id)
-            .ToListAsync();
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading car details: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private void GoBack()

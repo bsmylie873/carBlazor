@@ -1,10 +1,10 @@
 @page "/cars/edit/{Id:int}"
 @attribute [Authorize(Roles = "Admin,User")]
-@using CarBlazor.Data
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
-@inject CarBlazorContext Context
+@using CarBlazor.Services
+@inject CarService CarService
+@inject WarrantyService WarrantyService
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -14,6 +14,14 @@
 
 <h4>Car</h4>
 <hr />
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @ErrorMessage
+    </div>
+}
+
 <div class="row">
     <div class="col-md-4">
         @if (Car != null)
@@ -60,9 +68,13 @@
                 </div>
             </EditForm>
         }
-        else
+        else if (IsLoading)
         {
             <p>Loading...</p>
+        }
+        else
+        {
+            <p>Car not found. <button class="btn btn-secondary" @onclick="GoBack">Back to List</button></p>
         }
     </div>
 </div>
@@ -110,6 +122,12 @@
                         </tr>
                     }
                 }
+                else if (IsLoading)
+                {
+                    <tr>
+                        <td colspan="7">Loading warranties...</td>
+                    </tr>
+                }
                 else
                 {
                     <tr>
@@ -131,30 +149,53 @@
 
     private Car? Car { get; set; }
     private List<Warranty>? Warranties { get; set; }
+    private bool IsLoading { get; set; } = true;
+    private string? ErrorMessage { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        Car = await Context.Car.FindAsync(Id);
-
-        if (Car == null)
+        try
         {
-            Navigation.NavigateTo("cars");
-            return;
+            Car = await CarService.GetCarByIdAsync(Id);
+
+            if (Car == null)
+            {
+                ErrorMessage = $"Car with ID {Id} not found.";
+                return;
+            }
+
+            Warranties = await WarrantyService.GetWarrantiesForCarAsync(Id);
         }
-        
-        Warranties = await Context.Warranty
-            .Include(w => w.WarrantyType)
-            .Where(w => w.CarId == Id)
-            .ToListAsync();
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading car: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private async Task UpdateCar()
     {
-        if (Car != null)
+        try
         {
-            Context.Update(Car);
-            await Context.SaveChangesAsync();
-            Navigation.NavigateTo("cars");
+            if (Car == null) return;
+
+            var updatedCar = await CarService.UpdateCarAsync(Car);
+            
+            if (updatedCar != null)
+            {
+                Navigation.NavigateTo("cars");
+            }
+            else
+            {
+                ErrorMessage = "Failed to update car. It may no longer exist.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error updating car: {ex.Message}";
         }
     }
 

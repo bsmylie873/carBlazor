@@ -1,17 +1,23 @@
 @page "/loans/create"
 @page "/loans/create/{CarId:int?}"
 @attribute [Authorize(Roles = "Admin,User")]
-@using CarBlazor.Data
 @using CarBlazor.Models
+@using CarBlazor.Services
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
-@inject CarBlazorContext Context
+@inject CarService CarService
+@inject CustomerService CustomerService
+@inject LoanService LoanService
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PageTitle>Create Loan</PageTitle>
 
 <h1>Create</h1>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
 
 <h4>Loan</h4>
 <hr />
@@ -116,38 +122,50 @@
     private Loan Loan { get; set; } = new()
     {
         StartDate = DateTime.Today,
-        EndDate = DateTime.Today.AddYears(5),
-        StatusId = 1
+        EndDate = DateTime.Today.AddYears(5)
     };
 
     private List<Car>? Cars { get; set; }
     private List<Customer>? Customers { get; set; }
     private List<LoanStatus>? LoanStatuses { get; set; }
+    private string? ErrorMessage { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        Cars = await Context.Car.ToListAsync();
-        Customers = await Context.Customer.ToListAsync();
-        LoanStatuses = await Context.LoanStatus.ToListAsync();
-        
-        var defaultStatus = LoanStatuses?.FirstOrDefault();
-        if (defaultStatus != null)
+        try 
         {
-            Loan.StatusId = defaultStatus.Id;
-        }
+            Cars = await CarService.GetCarsAsync();
+            Customers = await CustomerService.GetCustomersAsync();
+            LoanStatuses = await LoanService.GetLoanStatusesAsync();
 
-        if (CarId.HasValue)
+            var defaultStatus = LoanStatuses?.FirstOrDefault();
+            if (defaultStatus != null)
+            {
+                Loan.StatusId = defaultStatus.Id;
+            }
+
+            if (CarId.HasValue)
+            {
+                Loan.CarId = CarId.Value;
+            }
+        }
+        catch (Exception ex)
         {
-            Loan.CarId = CarId.Value;
+            ErrorMessage = $"Error loading data: {ex.Message}";
         }
     }
 
     private async Task CreateLoan()
     {
-        await Context.Loan.AddAsync(Loan);
-        await Context.SaveChangesAsync();
-
-        Navigation.NavigateTo(CarId.HasValue ? $"cars/details/{CarId.Value}" : "loans");
+        try
+        {
+            await LoanService.CreateLoanAsync(Loan);
+            Navigation.NavigateTo(CarId.HasValue ? $"cars/details/{CarId.Value}" : "loans");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error creating loan: {ex.Message}";
+        }
     }
 
     private void GoBack()

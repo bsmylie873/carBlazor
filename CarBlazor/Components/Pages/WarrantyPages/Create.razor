@@ -1,17 +1,22 @@
 @page "/warranties/create"
 @page "/warranties/create/{CarId:int?}"
 @attribute [Authorize(Roles = "Admin,Manager")]
-@using CarBlazor.Data
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
-@inject CarBlazorContext Context
+@using CarBlazor.Services
+@inject CarService CarService
+@inject WarrantyService WarrantyService
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PageTitle>Create Warranty</PageTitle>
 
 <h1>Create</h1>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
 
 <h4>Warranty</h4>
 <hr />
@@ -99,24 +104,37 @@
 
     private List<Car>? Cars { get; set; }
     private List<WarrantyType>? WarrantyTypes { get; set; }
+    private string? ErrorMessage { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        Cars = await Context.Car.ToListAsync();
-        WarrantyTypes = await Context.WarrantyType.ToListAsync();
-
-        if (CarId.HasValue)
+        try
         {
-            Warranty.CarId = CarId.Value;
+            Cars = await CarService.GetCarsAsync();
+            WarrantyTypes = await WarrantyService.GetWarrantyTypesAsync();
+
+            if (CarId.HasValue)
+            {
+                Warranty.CarId = CarId.Value;
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading data: {ex.Message}";
         }
     }
 
     private async Task CreateWarranty()
     {
-        await Context.Warranty.AddAsync(Warranty);
-        await Context.SaveChangesAsync();
-
-        Navigation.NavigateTo(CarId.HasValue ? $"cars/details/{CarId.Value}" : "warranties");
+        try
+        {
+            await WarrantyService.CreateWarrantyAsync(Warranty);
+            Navigation.NavigateTo(CarId.HasValue ? $"cars/details/{CarId.Value}" : "warranties");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error creating warranty: {ex.Message}";
+        }
     }
 
     private void GoBack()

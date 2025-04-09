@@ -1,13 +1,12 @@
 @page "/loans"
 @attribute [Authorize(Roles = "Admin,Manager")]
-@using CarBlazor.Data
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
 @using CarBlazor.Components.Search
-@inject CarBlazorContext Context
+@using CarBlazor.Services
+@inject LoanService LoanService
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
+@inject IJSRuntime JsRuntime
 @rendermode InteractiveServer
 
 <PageTitle>Loans</PageTitle>
@@ -19,6 +18,11 @@
 <p>
     <a href="/loans/create" class="btn btn-primary">Create New</a>
 </p>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
 
 <table class="table">
     <thead>
@@ -33,7 +37,7 @@
         </tr>
     </thead>
     <tbody>
-        @if (Loans != null)
+        @if (Loans != null && Loans.Any())
         {
             @foreach (var loan in Loans)
             {
@@ -53,10 +57,16 @@
                 </tr>
             }
         }
-        else
+        else if (IsLoading)
         {
             <tr>
                 <td colspan="7">Loading...</td>
+            </tr>
+        }
+        else
+        {
+            <tr>
+                <td colspan="7">No loans found</td>
             </tr>
         }
     </tbody>
@@ -75,45 +85,38 @@
 @code {
     private List<Loan>? AllLoans { get; set; }
     private List<Loan>? Loans { get; set; }
+    private bool IsLoading { get; set; } = true;
+    private string? ErrorMessage { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        AllLoans = await Context.Loan
-            .Include(l => l.Car)
-            .Include(s => s.Status)
-            .ToListAsync();
-        Loans = await Context.Loan
-            .Include(l => l.Car)
-            .Include(s => s.Status)
-            .ToListAsync();
+        try
+        {
+            AllLoans = await LoanService.GetLoansAsync();
+            Loans = AllLoans;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading loans: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
-    
+
     private void HandleSearch(string searchTerm)
     {
-        if (string.IsNullOrWhiteSpace(searchTerm))
+        try
         {
-            Loans = AllLoans;
-            return;
+            Loans = LoanService.SearchLoans(searchTerm, AllLoans);
         }
-        
-        var normalizedSearchTerm = searchTerm
-            .Replace("$", "")
-            .Replace(",", "")
-            .Replace("%", "")
-            .Trim();
-
-        Loans = AllLoans?
-            .Where(l => 
-                l.Status != null && l.Status.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                l.StartDate.ToShortDateString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                l.EndDate.ToShortDateString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                l.Amount.ToString("C").Replace(",", "").Contains(normalizedSearchTerm, StringComparison.OrdinalIgnoreCase) ||
-                l.InterestRate.ToString("P2").Replace("%", "").Contains(normalizedSearchTerm, StringComparison.OrdinalIgnoreCase) ||
-                l.MonthlyPayment.ToString("C").Replace(",", "").Contains(normalizedSearchTerm, StringComparison.OrdinalIgnoreCase) ||
-                l.RemainingBalance.ToString("C").Replace(",", "").Contains(normalizedSearchTerm, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error searching loans: {ex.Message}";
+        }
     }
-    
+
     private void ViewDetails(int id)
     {
         Navigation.NavigateTo($"loans/details/{id}");
@@ -121,20 +124,27 @@
 
     private async Task DeleteConfirm(int id)
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this loan?");
-
-        if (confirmed)
+        try
         {
-            var loan = await Context.Loan.FindAsync(id);
-            if (loan != null)
+            var confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this loan?");
+
+            if (confirmed)
             {
-                Context.Loan.Remove(loan);
-                await Context.SaveChangesAsync();
-                Loans = await Context.Loan
-                    .Include(l => l.Car)
-                    .Include(s => s.Status)
-                    .ToListAsync();
+                var success = await LoanService.DeleteLoanAsync(id);
+                if (success)
+                {
+                    AllLoans = await LoanService.GetLoansAsync();
+                    Loans = AllLoans;
+                }
+                else
+                {
+                    ErrorMessage = "Failed to delete loan. It may no longer exist.";
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error deleting loan: {ex.Message}";
         }
     }
 }

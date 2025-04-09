@@ -32,6 +32,11 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddScoped<AuthenticationStateProvider, ServerAuthenticationStateProvider>();
 builder.Services.AddControllers();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<CarService>();
+builder.Services.AddScoped<CustomerService>();
+builder.Services.AddScoped<LoanService>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<WarrantyService>();
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();

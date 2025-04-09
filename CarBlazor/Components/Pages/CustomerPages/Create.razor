@@ -1,10 +1,9 @@
 @page "/customers/create"
 @attribute [Authorize(Roles = "Admin,User")]
-@using CarBlazor.Data
 @using CarBlazor.Models
+@using CarBlazor.Services
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
-@inject CarBlazorContext Context
+@inject CustomerService CustomerService
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -63,8 +62,7 @@
 
     private async Task CreateCustomer()
     {
-        Context.Customer.Add(Customer);
-        await Context.SaveChangesAsync();
+        await CustomerService.CreateCustomerAsync(Customer);
         Navigation.NavigateTo("customers");
     }
 

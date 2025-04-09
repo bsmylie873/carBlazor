@@ -1,42 +1,45 @@
 @page "/customers/details/{Id:int}"
 @attribute [Authorize(Roles = "Admin,User")]
-@using CarBlazor.Data
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
-@inject CarBlazorContext Context
+@using CarBlazor.Services
+@inject CustomerService CustomerService
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<PageTitle>Car Details</PageTitle>
+<PageTitle>Customer Details</PageTitle>
 
 <h1>Details</h1>
 
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+
 <div>
     <h4>Customer</h4>
-    <hr />
+    <hr/>
     @if (Customer != null)
     {
         <dl class="row">
             <dt class="col-sm-2">First Name</dt>
             <dd class="col-sm-10">@Customer.FirstName</dd>
-            
+
             <dt class="col-sm-2">Last Name</dt>
             <dd class="col-sm-10">@Customer.LastName</dd>
-            
+
             <dt class="col-sm-2">Email</dt>
             <dd class="col-sm-10">@Customer.Email</dd>
-            
+
             <dt class="col-sm-2">Phone Number</dt>
             <dd class="col-sm-10">@Customer.PhoneNumber</dd>
-            
+
             <dt class="col-sm-2">Address</dt>
             <dd class="col-sm-10">@Customer.Address</dd>
         </dl>
-        
-                
+
         <h4>Customer Cars</h4>
-        <hr />
+        <hr/>
 
         <table class="table">
             <thead>
@@ -60,8 +63,17 @@
                         <td>@customerCar.Car?.Year</td>
                         <td>@customerCar.PurchaseDate.ToShortDateString()</td>
                         <td>@(customerCar.IsPrimaryOwner ? "Yes" : "No")</td>
+                        <td>
+                            <a href="@($"cars/details/{customerCar.CarId}")" class="btn btn-sm btn-info">View Car</a>
+                        </td>
                     </tr>
                 }
+            }
+            else if (IsLoading)
+            {
+                <tr>
+                    <td colspan="6">Loading cars...</td>
+                </tr>
             }
             else
             {
@@ -71,42 +83,54 @@
             }
             </tbody>
         </table>
-        
+
         <div>
             <a class="btn btn-primary" href="@($"customers/edit/{Customer.Id}")">Edit</a> |
             <button class="btn btn-secondary" @onclick="GoBack">Back to List</button>
         </div>
     }
-    else
+    else if (IsLoading)
     {
         <p>Loading...</p>
+    }
+    else
+    {
+        <p>Customer not found.
+            <button class="btn btn-secondary" @onclick="GoBack">Back to List</button>
+        </p>
     }
 </div>
 
 @code {
-    [Parameter]
-    public int Id { get; set; }
+    [Parameter] public int Id { get; set; }
 
     private Customer? Customer { get; set; }
     private List<CustomerCar>? CustomerCars { get; set; }
+    private bool IsLoading { get; set; } = true;
+    private string? ErrorMessage { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        Customer = await Context.Customer.FindAsync(Id);
-        
-        if (Customer == null)
+        try
         {
-            Navigation.NavigateTo("customers");
+            Customer = await CustomerService.GetCustomerByIdAsync(Id);
+
+            if (Customer == null)
+            {
+                ErrorMessage = $"Customer with ID {Id} not found.";
+                return;
+            }
+            
+            CustomerCars = await CustomerService.GetCustomerCarsAsync(Id);
         }
-        await LoadCustomerCarsAndAvailableCars();
-    }
-    
-    private async Task LoadCustomerCarsAndAvailableCars()
-    {
-        CustomerCars = await Context.CustomerCar
-            .Include(cc => cc.Car)
-            .Where(cc => cc.CustomerId == Id)
-            .ToListAsync();
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading customer details: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private void GoBack()

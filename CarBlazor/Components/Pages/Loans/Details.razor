@@ -1,10 +1,9 @@
 @page "/loans/details/{Id:int}"
 @attribute [Authorize(Roles = "Admin,Manager")]
-@using CarBlazor.Data
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
-@inject CarBlazorContext Context
+@using CarBlazor.Services
+@inject LoanService LoanService
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -12,15 +11,25 @@
 
 <h1>Details</h1>
 
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+
 <div>
     <h4>Loan</h4>
-    <hr />
+    <hr/>
     @if (Loan != null)
     {
         <dl class="row">
             <dt class="col-sm-2">Car</dt>
             <dd class="col-sm-10">
                 <a href="@($"cars/details/{Loan.CarId}")">@($"{Loan.Car?.Make} {Loan.Car?.Model} ({Loan.Car?.Year})")</a>
+            </dd>
+
+            <dt class="col-sm-2">Customer</dt>
+            <dd class="col-sm-10">
+                <a href="@($"customers/details/{Loan.CustomerId}")">@Loan.Customer?.FullName</a>
             </dd>
 
             <dt class="col-sm-2">Amount</dt>
@@ -38,8 +47,11 @@
             <dt class="col-sm-2">Monthly Payment</dt>
             <dd class="col-sm-10">@Loan.MonthlyPayment.ToString("C")</dd>
 
+            <dt class="col-sm-2">Remaining Balance</dt>
+            <dd class="col-sm-10">@Loan.RemainingBalance.ToString("C")</dd>
+
             <dt class="col-sm-2">Status</dt>
-            <dd class="col-sm-10">@Loan.Status</dd>
+            <dd class="col-sm-10">@Loan.Status?.Name</dd>
         </dl>
 
         <div>
@@ -47,27 +59,43 @@
             <button class="btn btn-secondary" @onclick="GoBack">Back to List</button>
         </div>
     }
-    else
+    else if (IsLoading)
     {
         <p>Loading...</p>
+    }
+    else
+    {
+        <p>Loan not found.
+            <button class="btn btn-secondary" @onclick="GoBack">Back to List</button>
+        </p>
     }
 </div>
 
 @code {
-    [Parameter]
-    public int Id { get; set; }
+    [Parameter] public int Id { get; set; }
 
     private Loan? Loan { get; set; }
+    private bool IsLoading { get; set; } = true;
+    private string? ErrorMessage { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        Loan = await Context.Loan
-            .Include(l => l.Car)
-            .FirstOrDefaultAsync(l => l.Id == Id);
-
-        if (Loan == null)
+        try
         {
-            Navigation.NavigateTo("loans");
+            Loan = await LoanService.GetLoanByIdAsync(Id);
+
+            if (Loan == null)
+            {
+                ErrorMessage = $"Loan with ID {Id} not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading loan details: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
         }
     }
 

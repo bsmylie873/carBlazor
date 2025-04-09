@@ -1,16 +1,22 @@
 @page "/loans/edit/{Id:int}"
 @attribute [Authorize(Roles = "Admin,Manager")]
-@using CarBlazor.Data
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
-@inject CarBlazorContext Context
+@using CarBlazor.Services
+@inject CarService CarService
+@inject CustomerService CustomerService
+@inject LoanService LoanService
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PageTitle>Edit Loan</PageTitle>
 
 <h1>Edit</h1>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
 
 <h4>Loan</h4>
 <hr />
@@ -68,19 +74,40 @@
                     <InputNumber id="monthlyPayment" @bind-Value="Loan.MonthlyPayment" class="form-control" />
                     <ValidationMessage For="@(() => Loan.MonthlyPayment)" />
                 </div>
-                
+
+                <div class="form-group mb-3">
+                    <label for="remainingBalance">Remaining Balance</label>
+                    <InputNumber id="remainingBalance" @bind-Value="Loan.RemainingBalance" class="form-control" />
+                    <ValidationMessage For="@(() => Loan.RemainingBalance)" />
+                </div>
+
                 <div class="form-group mb-3">
                     <label for="loanStatusId">Loan Status</label>
                     <InputSelect id="loanStatusId" @bind-Value="Loan.StatusId" class="form-control">
                         @if (LoanStatuses != null)
                         {
-                            @foreach (var type in LoanStatuses)
+                            @foreach (var status in LoanStatuses)
                             {
-                                <option value="@type.Id">@type.Name</option>
+                                <option value="@status.Id">@status.Name</option>
                             }
                         }
                     </InputSelect>
-                    <ValidationMessage For="@(() => Loan.Status)" />
+                    <ValidationMessage For="@(() => Loan.StatusId)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="customerId">Customer</label>
+                    <InputSelect id="customerId" @bind-Value="Loan.CustomerId" class="form-control">
+                        <option value="">-- Select Customer --</option>
+                        @if (Customers != null)
+                        {
+                            @foreach (var customer in Customers)
+                            {
+                                <option value="@customer.Id">@customer.FullName</option>
+                            }
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => Loan.CustomerId)" />
                 </div>
 
                 <div class="form-group mb-3">
@@ -89,9 +116,13 @@
                 </div>
             </EditForm>
         }
-        else
+        else if (IsLoading)
         {
             <p>Loading...</p>
+        }
+        else
+        {
+            <p>Loan not found. <button class="btn btn-secondary" @onclick="GoBack">Back to List</button></p>
         }
     </div>
 </div>
@@ -102,32 +133,60 @@
 
     private Loan? Loan { get; set; }
     private List<Car>? Cars { get; set; }
+    private List<Customer>? Customers { get; set; }
     private List<LoanStatus>? LoanStatuses { get; set; }
     private int? OriginalCarId { get; set; }
+    private bool IsLoading { get; set; } = true;
+    private string? ErrorMessage { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        Loan = await Context.Loan.FindAsync(Id);
-        LoanStatuses = await Context.LoanStatus.ToListAsync();
-
-        if (Loan == null)
+        try
         {
-            Navigation.NavigateTo("loans");
-            return;
-        }
+            Loan = await LoanService.GetLoanByIdAsync(Id);
 
-        OriginalCarId = Loan.CarId;
-        Cars = await Context.Car.ToListAsync();
+            if (Loan == null)
+            {
+                ErrorMessage = $"Loan with ID {Id} not found.";
+                return;
+            }
+
+            OriginalCarId = Loan.CarId;
+            
+            Cars = await CarService.GetCarsAsync();
+            Customers = await CustomerService.GetCustomersAsync();
+            LoanStatuses = await LoanService.GetLoanStatusesAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading loan: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private async Task UpdateLoan()
     {
-        if (Loan != null)
+        try
         {
-            Context.Update(Loan);
-            await Context.SaveChangesAsync();
+            if (Loan == null) return;
 
-            Navigation.NavigateTo(OriginalCarId.HasValue ? $"cars/details/{OriginalCarId.Value}" : "loans");
+            var updatedLoan = await LoanService.UpdateLoanAsync(Loan);
+
+            if (updatedLoan != null)
+            {
+                Navigation.NavigateTo(OriginalCarId.HasValue ? $"cars/details/{OriginalCarId.Value}" : "loans");
+            }
+            else
+            {
+                ErrorMessage = "Failed to update loan. It may no longer exist.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error updating loan: {ex.Message}";
         }
     }
 

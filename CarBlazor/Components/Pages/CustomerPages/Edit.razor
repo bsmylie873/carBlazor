@@ -1,16 +1,21 @@
 @page "/customers/edit/{Id:int}"
 @attribute [Authorize(Roles = "Admin,User")]
-@using CarBlazor.Data
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
-@inject CarBlazorContext Context
+@using CarBlazor.Services
+@inject CustomerService CustomerService
+@inject CarService CarService
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PageTitle>Edit Customer</PageTitle>
 
 <h1>Edit</h1>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
 
 <h4>Customer</h4>
 <hr />
@@ -60,9 +65,13 @@
                 </div>
             </EditForm>
         }
-        else
+        else if (IsLoading)
         {
             <p>Loading...</p>
+        }
+        else
+        {
+            <p>Customer not found. <button class="btn btn-secondary" @onclick="GoBack">Back to List</button></p>
         }
     </div>
 </div>
@@ -97,6 +106,12 @@
                     </td>
                 </tr>
             }
+        }
+        else if (IsLoading)
+        {
+            <tr>
+                <td colspan="6">Loading cars...</td>
+            </tr>
         }
         else
         {
@@ -154,6 +169,8 @@
     private Customer? Customer { get; set; }
     private List<CustomerCar>? CustomerCars { get; set; }
     private List<Car>? AvailableCars { get; set; }
+    private bool IsLoading { get; set; } = true;
+    private string? ErrorMessage { get; set; }
     private CustomerCar newCustomerCar = new CustomerCar
     {
         PurchaseDate = DateTime.Today,
@@ -162,65 +179,100 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Load customer with their cars
-        Customer = await Context.Customer
-            .FirstOrDefaultAsync(c => c.Id == Id);
-
-        if (Customer == null)
+        try
         {
-            Navigation.NavigateTo("customers");
-            return;
-        }
+            Customer = await CustomerService.GetCustomerByIdAsync(Id);
 
-        await LoadCustomerCarsAndAvailableCars();
+            if (Customer == null)
+            {
+                ErrorMessage = $"Customer with ID {Id} not found.";
+                return;
+            }
+
+            await LoadCustomerCarsAndAvailableCars();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading customer: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private async Task UpdateCustomer()
     {
-        Context.Update(Customer);
-        await Context.SaveChangesAsync();
-        Navigation.NavigateTo($"customers/details/{Id}");
+        try
+        {
+            if (Customer == null) return;
+
+            var updatedCustomer = await CustomerService.UpdateCustomerAsync(Customer);
+
+            if (updatedCustomer != null)
+            {
+                Navigation.NavigateTo($"customers/details/{Id}");
+            }
+            else
+            {
+                ErrorMessage = "Failed to update customer. It may no longer exist.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error updating customer: {ex.Message}";
+        }
     }
 
     private async Task LoadCustomerCarsAndAvailableCars()
     {
-        CustomerCars = await Context.CustomerCar
-            .Include(cc => cc.Car)
-            .Where(cc => cc.CustomerId == Id)
-            .ToListAsync();
+        try
+        {
+            CustomerCars = await CustomerService.GetCustomerCarsAsync(Id);
 
-        var customerCarIds = CustomerCars.Select(cc => cc.CarId).ToList();
-
-        AvailableCars = await Context.Car
-            .Where(c => !customerCarIds.Contains(c.Id))
-            .ToListAsync();
+            var customerCarIds = CustomerCars.Select(cc => cc.CarId).ToList();
+            AvailableCars = await CarService.GetCarsNotAssociatedWithCustomerAsync(customerCarIds);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading customer cars: {ex.Message}";
+        }
     }
 
     private async Task AddCarToCustomer()
     {
-        if (newCustomerCar.CarId == 0) return;
-
-        newCustomerCar.CustomerId = Id;
-
-        await Context.CustomerCar.AddAsync(newCustomerCar);
-        await Context.SaveChangesAsync();
-
-        // Reset form and reload data
-        newCustomerCar = new CustomerCar
+        try
         {
-            PurchaseDate = DateTime.Today,
-            IsPrimaryOwner = false
-        };
+            if (newCustomerCar.CarId == 0) return;
 
-        await LoadCustomerCarsAndAvailableCars();
+            newCustomerCar.CustomerId = Id;
+            await CustomerService.AddCarToCustomerAsync(newCustomerCar);
+            
+            newCustomerCar = new CustomerCar
+            {
+                PurchaseDate = DateTime.Today,
+                IsPrimaryOwner = false
+            };
+
+            await LoadCustomerCarsAndAvailableCars();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error adding car to customer: {ex.Message}";
+        }
     }
 
     private async Task RemoveCarFromCustomer(CustomerCar customerCar)
     {
-        Context.CustomerCar.Remove(customerCar);
-        await Context.SaveChangesAsync();
-
-        await LoadCustomerCarsAndAvailableCars();
+        try
+        {
+            await CustomerService.RemoveCarFromCustomerAsync(customerCar.Id);
+            await LoadCustomerCarsAndAvailableCars();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error removing car from customer: {ex.Message}";
+        }
     }
 
     private void GoBack()

@@ -1,16 +1,20 @@
 @page "/warranties/details/{Id:int}"
 @attribute [Authorize(Roles = "Admin,Manager")]
-@using CarBlazor.Data
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
-@inject CarBlazorContext Context
+@using CarBlazor.Services
+@inject WarrantyService WarrantyService
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PageTitle>Warranty Details</PageTitle>
 
 <h1>Details</h1>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
 
 <div>
     <h4>Warranty</h4>
@@ -44,12 +48,16 @@
 
         <div>
             <a class="btn btn-primary" href="@($"warranties/edit/{Warranty.Id}")">Edit</a> |
-            <button class="btn btn-secondary" @onclick="GoBack">Back to List</button>
+            <button type="button" class="btn btn-secondary" @onclick="GoBack">Back to List</button>
         </div>
+    }
+    else if (IsLoading)
+    {
+        <p>Loading...</p>
     }
     else
     {
-        <p>Loading...</p>
+        <p>Warranty not found. <button type="button" class="btn btn-secondary" @onclick="GoBack">Back to List</button></p>
     }
 </div>
 
@@ -58,17 +66,27 @@
     public int Id { get; set; }
 
     private Warranty? Warranty { get; set; }
+    private bool IsLoading { get; set; } = true;
+    private string? ErrorMessage { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        Warranty = await Context.Warranty
-            .Include(w => w.Car)
-            .Include(w => w.WarrantyType)
-            .FirstOrDefaultAsync(w => w.Id == Id);
-
-        if (Warranty == null)
+        try
         {
-            Navigation.NavigateTo("warranties");
+            Warranty = await WarrantyService.GetWarrantyByIdAsync(Id);
+            
+            if (Warranty == null)
+            {
+                ErrorMessage = $"Warranty with ID {Id} not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading warranty details: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
         }
     }
 
