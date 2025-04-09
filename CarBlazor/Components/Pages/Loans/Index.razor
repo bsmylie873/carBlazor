@@ -1,6 +1,5 @@
 @page "/loans"
-@attribute [Authorize]
-@using System.Globalization
+@attribute [Authorize(Roles = "Admin,Manager")]
 @using CarBlazor.Data
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
@@ -18,7 +17,7 @@
 <Search Placeholder="Search loans..." OnSearch="HandleSearch" />
 
 <p>
-    <a href="loans/create" class="btn btn-primary">Create New</a>
+    <a href="/loans/create" class="btn btn-primary">Create New</a>
 </p>
 
 <table class="table">

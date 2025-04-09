@@ -1,6 +1,6 @@
 @page "/warranties/create"
 @page "/warranties/create/{CarId:int?}"
-@attribute [Authorize]
+@attribute [Authorize(Roles = "Admin,Manager")]
 @using CarBlazor.Data
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization

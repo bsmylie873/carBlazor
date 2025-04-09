@@ -1,9 +1,8 @@
 @page "/cars/delete/{Id:int}"
-@attribute [Authorize]
+@attribute [Authorize(Roles = "Admin,User")]
 @using CarBlazor.Data
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
 @inject CarBlazorContext Context
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
