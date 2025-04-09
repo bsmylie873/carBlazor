@@ -4,7 +4,7 @@
 @using CarBlazor.Services
 @inject UserService UserService
 @inject NavigationManager NavigationManager
-@attribute [Authorize(Policy = "AdminOnly")]
+@attribute [Authorize(Roles = "Admin")]
 @rendermode InteractiveServer
 
 <PageTitle>User Details - Car Dealership Management</PageTitle>

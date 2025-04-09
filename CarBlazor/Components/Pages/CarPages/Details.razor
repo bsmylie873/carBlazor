@@ -1,5 +1,5 @@
 @page "/cars/details/{Id:int}"
-@attribute [Authorize(Roles = "Admin,User")]
+@attribute [Authorize(Roles = "Admin,Manager,User")]
 @using CarBlazor.Models
 @using CarBlazor.Services
 @using Microsoft.AspNetCore.Authorization

@@ -1,6 +1,5 @@
 @page "/cars"
 @attribute [Authorize]
-@using CarBlazor.Data
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
 @using CarBlazor.Components.Search
@@ -51,11 +50,17 @@
             </tr>
         }
     }
-    else
+    else if (IsLoading)
     {
         <tr>
-            <td colspan="6">Loading...</td>
+            <td colspan="7">Loading...</td>
         </tr>
+    }
+    else
+    {
+    <tr>
+        <td colspan="7">No customers found</td>
+    </tr>
     }
     </tbody>
 </table>
@@ -72,6 +77,7 @@
 
 @code {
     private List<Car>? Cars { get; set; }
+    private bool IsLoading { get; set; } = true;
     private string? ErrorMessage { get; set; }
 
     protected override async Task OnInitializedAsync()
@@ -83,6 +89,10 @@
         catch (Exception ex)
         {
             ErrorMessage = $"Error loading cars: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
         }
     }
 

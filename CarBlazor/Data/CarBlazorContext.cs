@@ -44,7 +44,8 @@ namespace CarBlazor.Data
             modelBuilder.Entity<Role>().HasData(
                 new Role { Id = "Admin", Name = "Administrator", Description = "Full access to all features" },
                 new Role { Id = "User", Name = "Standard User", Description = "Limited access to features" },
-                new Role { Id = "Guest", Name = "Guest User", Description = "Read-only access to features" }
+                new Role { Id = "Guest", Name = "Guest User", Description = "Read-only access to features" },
+                new Role { Id = "Manager", Name = "Manager", Description = "Access to management features" }
             );
             
             var (hash, salt) = Utilities.Authentication.HashPassword("password");
