@@ -35,6 +35,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<CarService>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<LoanService>();
+builder.Services.AddScoped<RoleService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<WarrantyService>();
 builder.Services.AddHttpContextAccessor();

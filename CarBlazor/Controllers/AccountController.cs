@@ -21,8 +21,8 @@ namespace CarBlazor.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromForm] LoginViewModel model)
         {
-            var result = await _authService.LoginAsync(model.Username, model.Password, model.RememberMe);
-            return result ? Redirect("/") : Redirect("/login?error=true");
+            var (success, passwordResetRequired, userId) = await _authService.LoginAsync(model.Username, model.Password, model.RememberMe);
+            return !success ? Redirect("/login?error=true") : Redirect(passwordResetRequired ? $"/change-password/{userId}?reset=true" : "/");
         }
         
         [HttpPost("logout")]

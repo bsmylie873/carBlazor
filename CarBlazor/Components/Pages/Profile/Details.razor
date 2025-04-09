@@ -1,12 +1,11 @@
 @page "/account/profile"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
-@using CarBlazor.Data
 @using System.Security.Claims
 @using CarBlazor.Models
-@using Microsoft.EntityFrameworkCore
+@using CarBlazor.Services
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject CarBlazorContext DbContext
+@inject UserService UserService
 @attribute [Authorize]
 @rendermode InteractiveServer
 
@@ -14,7 +13,7 @@
 
 <div class="container">
     <h1>My Profile</h1>
-    
+
     @if (_user == null)
     {
         <div class="d-flex justify-content-center">
@@ -45,21 +44,33 @@
             </div>
         </div>
     }
+
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <div class="alert alert-danger mt-3">@_errorMessage</div>
+    }
 </div>
 
 @code {
     private User? _user;
-    
+    private string? _errorMessage;
+
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var userIdClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier);
-        
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+        try
         {
-            _user = await DbContext.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Id == userId);
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userIdClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+            {
+                _user = await UserService.GetUserByIdAsync(userId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error loading profile: {ex.Message}";
         }
     }
+
 }

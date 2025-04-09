@@ -17,6 +17,7 @@ namespace CarBlazor.Models
         
         [Required]
         public string RoleId { get; set; } = "User";
+        public bool ForcePasswordReset { get; set; }
         
         [ForeignKey("RoleId")]
         public virtual Role Role { get; set; } = null!;

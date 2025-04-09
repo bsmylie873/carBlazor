@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using CarBlazor.Models;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace CarBlazor.Data
 {
@@ -20,6 +21,14 @@ namespace CarBlazor.Data
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<Warranty> Warranty { get; set; } = null!;
         public DbSet<WarrantyType> WarrantyType { get; set; } = null!;
+        
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+    
+            optionsBuilder.ConfigureWarnings(warnings => 
+                warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
+        }
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -48,7 +57,8 @@ namespace CarBlazor.Data
                     PasswordHash = hash, 
                     Salt = salt, 
                     RoleId = "Admin",
-                    CreatedAt = DateTime.UtcNow
+                    ForcePasswordReset = false,
+                    CreatedAt = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc)
                 }
             );
             

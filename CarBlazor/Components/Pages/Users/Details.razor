@@ -1,9 +1,8 @@
 @page "/admin/users/{Id:int}"
 @using Microsoft.AspNetCore.Authorization
-@using CarBlazor.Data
 @using CarBlazor.Models
-@using Microsoft.EntityFrameworkCore
-@inject CarBlazorContext DbContext
+@using CarBlazor.Services
+@inject UserService UserService
 @inject NavigationManager NavigationManager
 @attribute [Authorize(Policy = "AdminOnly")]
 @rendermode InteractiveServer
@@ -12,7 +11,7 @@
 
 <div class="container">
     <h1>User Details</h1>
-    
+
     @if (_user == null)
     {
         <div class="d-flex justify-content-center">
@@ -40,29 +39,90 @@
                     <div class="col-md-3 fw-bold">Role:</div>
                     <div class="col-md-9">@_user.Role.Name</div>
                 </div>
+                <div class="row mb-3">
+                    <div class="col-md-3 fw-bold">Password Reset:</div>
+                    <div class="col-md-9">@_user.ForcePasswordReset</div>
+                </div>
             </div>
             <div class="card-footer">
-                <a href="/admin/users" class="btn btn-secondary">Back to Users</a>
+                <div class="d-flex justify-content-between">
+                    <a href="/admin/users" class="btn btn-secondary">Back to Users</a>
+                    <button class="btn btn-warning" @onclick="ConfirmResetPassword">Reset Password</button>
+                </div>
             </div>
         </div>
+        @if (_showConfirmDialog)
+        {
+            <div class="modal fade show" style="display: block; background-color: rgba(0,0,0,0.5);" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Confirm Password Reset</h5>
+                            <button type="button" class="btn-close" @onclick="CancelDialog"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>@_dialogMessage</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="CancelDialog">Cancel</button>
+                            <button type="button" class="btn btn-warning" @onclick="ResetPassword">Reset Password</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
     }
 </div>
 
 @code {
-    [Parameter]
-    public int Id { get; set; }
-    
+    [Parameter] public int Id { get; set; }
+
     private User? _user;
+    private string? ErrorMessage { get; set; }
+    private bool _showConfirmDialog = false;
+    private string _dialogMessage = string.Empty;
+
+    private void ConfirmResetPassword()
+    {
+        _dialogMessage = $"Are you sure you want to reset the password for {_user?.Username}? They will be forced to change it on next login.";
+        _showConfirmDialog = true;
+    }
+    
+    private async Task ResetPassword()
+    {
+        try
+        {
+            await UserService.ResetPasswordAsync(Id);
+            _user = await UserService.GetUserByIdAsync(Id);
+            _showConfirmDialog = false;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error resetting password: {ex.Message}";
+        }
+    }
+
+    private void CancelDialog()
+    {
+        _showConfirmDialog = false;
+    }
     
     protected override async Task OnParametersSetAsync()
     {
-        _user = await DbContext.Users
-            .Include(u => u.Role)
-            .FirstOrDefaultAsync(u => u.Id == Id);
-            
-        if (_user == null)
+        try
         {
+            _user = await UserService.GetUserByIdAsync(Id);
+
+            if (_user == null)
+            {
+                NavigationManager.NavigateTo("/admin/users");
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading user: {ex.Message}";
             NavigationManager.NavigateTo("/admin/users");
         }
     }
+
 }

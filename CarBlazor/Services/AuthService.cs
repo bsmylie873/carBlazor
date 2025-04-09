@@ -19,29 +19,30 @@ public class AuthService
         _context = context;
     }
 
-    public async Task<bool> LoginAsync(string username, string password, bool rememberMe)
+    public async Task<(bool Success, bool PasswordResetRequired, int UserId)> LoginAsync(string username, string password, bool rememberMe)
+{
+    var user = await _context.Users
+        .Include(u => u.Role)
+        .FirstOrDefaultAsync(u => u.Username == username);
+
+    if (user == null) return (false, false, 0);
+
+    if (!VerifyPassword(password, user.PasswordHash, user.Salt))
+        return (false, false, 0);
+
+    if (user.ForcePasswordReset)
     {
-        var user = await _context.Users
-            .Include(u => u.Role)
-            .FirstOrDefaultAsync(u => u.Username == username);
-
-        if (user == null) return false;
-        
-        if (!VerifyPassword(password, user.PasswordHash, user.Salt)) 
-            return false;
-
         var claims = new List<Claim>
         {
             new(ClaimTypes.Name, user.Username),
-            new(ClaimTypes.Role, user.Role.Id),
             new(ClaimTypes.NameIdentifier, user.Id.ToString())
         };
 
         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var authProperties = new AuthenticationProperties
         {
-            IsPersistent = rememberMe,
-            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(rememberMe ? 7 : 1)
+            IsPersistent = false,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30)
         };
 
         await _httpContextAccessor.HttpContext!.SignInAsync(
@@ -49,14 +50,36 @@ public class AuthService
             new ClaimsPrincipal(claimsIdentity),
             authProperties);
 
-        return true;
+        return (true, true, user.Id);
     }
+    
+    var fullClaims = new List<Claim>
+    {
+        new(ClaimTypes.Name, user.Username),
+        new(ClaimTypes.Role, user.Role.Id),
+        new(ClaimTypes.NameIdentifier, user.Id.ToString())
+    };
+
+    var fullClaimsIdentity = new ClaimsIdentity(fullClaims, CookieAuthenticationDefaults.AuthenticationScheme);
+    var fullAuthProperties = new AuthenticationProperties
+    {
+        IsPersistent = rememberMe,
+        ExpiresUtc = DateTimeOffset.UtcNow.AddDays(rememberMe ? 7 : 1)
+    };
+
+    await _httpContextAccessor.HttpContext!.SignInAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme,
+        new ClaimsPrincipal(fullClaimsIdentity),
+        fullAuthProperties);
+
+    return (true, false, user.Id);
+}
     public async Task LogoutAsync()
     {
         await _httpContextAccessor.HttpContext!.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     }
     
-    public async Task<(bool Success, string Message)> ChangePasswordAsync(int userId, string currentPassword, string newPassword)
+    public async Task<(bool Success, string Message)> ChangePasswordAsync(int userId, string? currentPassword, string newPassword)
     {
         try
         {
@@ -64,8 +87,11 @@ public class AuthService
             if (user == null)
                 return (false, "User not found.");
 
-            if (!VerifyPassword(currentPassword, user.PasswordHash, user.Salt))
-                return (false, "Current password is incorrect.");
+            if (currentPassword != null)
+            {
+                if (!VerifyPassword(currentPassword, user.PasswordHash, user.Salt))
+                    return (false, "Current password is incorrect.");
+            }
             
             (user.PasswordHash, user.Salt) = HashPassword(newPassword);
         

@@ -2,12 +2,11 @@
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
-@using CarBlazor.Data
 @using CarBlazor.Models
 @using System.Security.Claims
-@using Microsoft.EntityFrameworkCore
+@using CarBlazor.Services
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject CarBlazorContext DbContext
+@inject UserService UserService
 @inject NavigationManager Navigation
 @attribute [Authorize]
 @rendermode InteractiveServer
@@ -33,13 +32,13 @@
             </div>
             <div class="card-body">
                 <EditForm Model="@_model" OnValidSubmit="UpdateProfile" FormName="editProfileForm">
-                    <DataAnnotationsValidator />
-                    <ValidationSummary class="text-danger" />
+                    <DataAnnotationsValidator/>
+                    <ValidationSummary class="text-danger"/>
 
                     <div class="mb-3">
                         <label for="username" class="form-label">Username</label>
-                        <InputText id="username" @bind-Value="_model.Username" class="form-control" />
-                        <ValidationMessage For="@(() => _model.Username)" />
+                        <InputText id="username" @bind-Value="_model.Username" class="form-control"/>
+                        <ValidationMessage For="@(() => _model.Username)"/>
                     </div>
 
                     <div class="d-flex gap-2">
@@ -69,19 +68,24 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var userIdClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier);
-
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+        try
         {
-            _user = await DbContext.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Id == userId);
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userIdClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier);
 
-            if (_user != null)
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
             {
-                _model.Username = _user.Username;
+                _user = await UserService.GetUserByIdAsync(userId);
+
+                if (_user != null)
+                {
+                    _model.Username = _user.Username;
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error loading user information: {ex.Message}";
         }
     }
 
@@ -91,26 +95,40 @@
 
         try
         {
-            var existingUser = await DbContext.Users
-                .FirstOrDefaultAsync(u => u.Username == _model.Username && u.Id != _user.Id);
-
-            if (existingUser != null)
+            if (_user.Username != _model.Username)
             {
-                _errorMessage = "Username is already taken.";
-                return;
+                var usernameExists = await UserService.UsernameExistsAsync(_model.Username);
+
+                if (usernameExists)
+                {
+                    _errorMessage = "Username is already taken.";
+                    return;
+                }
+
+                _user.Username = _model.Username;
+
+                var updatedUser = await UserService.UpdateUserAsync(_user);
+
+                if (updatedUser != null)
+                {
+                    _successMessage = "Profile updated successfully.";
+                    _errorMessage = null;
+
+                    StateHasChanged();
+                    await Task.Delay(1500);
+                    Navigation.NavigateTo("/account/profile");
+                }
+                else
+                {
+                    _errorMessage = "Failed to update profile.";
+                }
             }
-
-            _user.Username = _model.Username;
-            
-            DbContext.Users.Update(_user);
-            await DbContext.SaveChangesAsync();
-
-            _successMessage = "Profile updated successfully.";
-            _errorMessage = null;
-            
-            StateHasChanged();
-            await Task.Delay(1500);
-            Navigation.NavigateTo("/account/profile");
+            else
+            {
+                _successMessage = "No changes made.";
+                await Task.Delay(1500);
+                Navigation.NavigateTo("/account/profile");
+            }
         }
         catch (Exception ex)
         {
@@ -125,4 +143,5 @@
         [StringLength(50, MinimumLength = 3, ErrorMessage = "Username must be between 3 and 50 characters")]
         public string Username { get; set; } = string.Empty;
     }
+
 }

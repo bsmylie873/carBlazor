@@ -1,11 +1,10 @@
 @page "/admin/users"
 @attribute [Authorize(Roles = "Admin")]
-@using CarBlazor.Data
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
 @using CarBlazor.Components.Search
-@inject CarBlazorContext Context
+@using CarBlazor.Services
+@inject UserService UserService
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
 @rendermode InteractiveServer
@@ -20,6 +19,11 @@
     <a href="/admin/users/create" class="btn btn-primary">Create New</a>
 </p>
 
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+
 <table class="table">
     <thead>
         <tr>
@@ -30,7 +34,25 @@
         </tr>
     </thead>
     <tbody>
-        @if (Users != null)
+        @if (Users == null)
+        {
+            <tr>
+                <td colspan="4">
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        }
+        else if (!Users.Any())
+        {
+            <tr>
+                <td colspan="4">No users found.</td>
+            </tr>
+        }
+        else
         {
             @foreach (var user in Users)
             {
@@ -47,12 +69,6 @@
                 </tr>
             }
         }
-        else
-        {
-            <tr>
-                <td colspan="4">Loading...</td>
-            </tr>
-        }
     </tbody>
 </table>
 
@@ -67,31 +83,38 @@
 </style>
 
 @code {
-    private List<User>? AllUsers { get; set; }
     private List<User>? Users { get; set; }
+    private string? ErrorMessage { get; set; }
+    private string CurrentSearchTerm = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        AllUsers = await Context.Users
-            .Include(u => u.Role)
-            .ToListAsync();
-        Users = AllUsers;
+        await LoadUsers();
     }
 
-    private void HandleSearch(string searchTerm)
+    private async Task LoadUsers(string searchTerm = "")
     {
-        if (string.IsNullOrWhiteSpace(searchTerm))
+        try
         {
-            Users = AllUsers;
-            return;
+            if (string.IsNullOrWhiteSpace(searchTerm))
+            {
+                Users = await UserService.GetUsersAsync();
+            }
+            else
+            {
+                Users = await UserService.SearchUsersAsync(searchTerm);
+            }
+            CurrentSearchTerm = searchTerm;
         }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading users: {ex.Message}";
+        }
+    }
 
-        Users = AllUsers?
-            .Where(u => 
-                u.Username.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                u.Role.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                u.CreatedAt.ToString("g").Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+    private async Task HandleSearch(string searchTerm)
+    {
+        await LoadUsers(searchTerm);
     }
 
     private void ViewDetails(int id)
@@ -101,21 +124,27 @@
 
     private async Task DeleteConfirm(int id)
     {
-        var confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this user?");
-
-        if (confirmed)
+        try
         {
-            var user = await Context.Users.FindAsync(id);
-            if (user != null)
+            var confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this user?");
+
+            if (confirmed)
             {
-                Context.Users.Remove(user);
-                await Context.SaveChangesAsync();
-                
-                AllUsers = await Context.Users
-                    .Include(u => u.Role)
-                    .ToListAsync();
-                Users = AllUsers;
+                var success = await UserService.DeleteUserAsync(id);
+
+                if (success)
+                {
+                    await LoadUsers(CurrentSearchTerm);
+                }
+                else
+                {
+                    ErrorMessage = "Failed to delete user. User not found.";
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error deleting user: {ex.Message}";
         }
     }
 }
