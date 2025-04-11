@@ -1,0 +1,7 @@
+<button class="btn btn-sm btn-link text-danger" @onclick="OnClick">
+    <i class="bi bi-trash fs-5"></i>
+</button>
+
+@code {
+    [Parameter] public EventCallback OnClick { get; set; }
+}

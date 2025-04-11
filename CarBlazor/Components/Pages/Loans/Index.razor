@@ -1,9 +1,11 @@
 @page "/loans"
 @attribute [Authorize(Roles = "Admin,Manager")]
+@using CarBlazor.Components.Constants
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
 @using CarBlazor.Components.Search
 @using CarBlazor.Services
+@using CarBlazor.Components.Datagrid
 @inject LoanService LoanService
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
@@ -13,7 +15,7 @@
 
 <h1>Loans</h1>
 
-<Search Placeholder="Search loans..." OnSearch="HandleSearch" />
+<Search Placeholder="Search loans..." OnSearch="HandleSearchAsync" />
 
 <p>
     <a href="/loans/create" class="btn btn-primary">Create New</a>
@@ -23,77 +25,34 @@
 {
     <div class="alert alert-danger">@ErrorMessage</div>
 }
-
-<table class="table">
-    <thead>
-        <tr>
-            <th>Car</th>
-            <th>Amount</th>
-            <th>Interest Rate</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>Status</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (Loans != null && Loans.Any())
-        {
-            @foreach (var loan in Loans)
-            {
-                <tr @onclick="() => ViewDetails(loan.Id)" class="clickable-row">
-                    <td>@($"{loan.Car?.Make} {loan.Car?.Model} ({loan.Car?.Year})")</td>
-                    <td>@loan.Amount.ToString("C")</td>
-                    <td>@loan.InterestRate.ToString("P2")</td>
-                    <td>@loan.StartDate.ToShortDateString()</td>
-                    <td>@loan.EndDate.ToShortDateString()</td>
-                    <td>@loan.Status?.Name</td>
-                    <td>
-                        <button @onclick:stopPropagation="true" @onclick="() => DeleteConfirm(loan.Id)"
-                                class="btn btn-sm btn-link text-danger">
-                            <i class="bi bi-trash fs-5"></i>
-                        </button>
-                    </td>
-                </tr>
-            }
-        }
-        else if (IsLoading)
-        {
-            <tr>
-                <td colspan="7">Loading...</td>
-            </tr>
-        }
-        else
-        {
-            <tr>
-                <td colspan="7">No loans found</td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-<style>
-    .clickable-row {
-        cursor: pointer;
-    }
-
-    .clickable-row:hover {
-        background-color: #f5f5f5;
-    }
-</style>
+@if (IsLoading)
+{
+    <p>Loading...</p>
+}
+else if (Loans == null || Loans.Count == 0)
+{
+    <p>No loans found</p>
+}
+else
+{
+    <Datagrid TItem="Loan" Items="Loans" Columns="_loanColumns" OnRowClick="HandleRowClick">
+        <RowActions Context="loan">
+            <DeleteButton OnClick="@(() => DeleteConfirm(loan.Id))" />
+        </RowActions>
+    </Datagrid>
+}
 
 @code {
-    private List<Loan>? AllLoans { get; set; }
     private List<Loan>? Loans { get; set; }
     private bool IsLoading { get; set; } = true;
     private string? ErrorMessage { get; set; }
+    private readonly List<DataGridColumn<Loan>> _loanColumns = DatagridColumnDefinitions.LoanColumns;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            AllLoans = await LoanService.GetLoansAsync();
-            Loans = AllLoans;
+            Loans = await LoanService.GetLoansAsync();
         }
         catch (Exception ex)
         {
@@ -105,11 +64,11 @@
         }
     }
 
-    private void HandleSearch(string searchTerm)
+    private async Task HandleSearchAsync(string searchTerm)
     {
         try
         {
-            Loans = LoanService.SearchLoans(searchTerm, AllLoans);
+            Loans = await LoanService.SearchLoansAsync(searchTerm);
         }
         catch (Exception ex)
         {
@@ -117,9 +76,9 @@
         }
     }
 
-    private void ViewDetails(int id)
+    private void HandleRowClick(Loan loan)
     {
-        Navigation.NavigateTo($"loans/details/{id}");
+        Navigation.NavigateTo($"loans/details/{loan.Id}");
     }
 
     private async Task DeleteConfirm(int id)
@@ -133,8 +92,8 @@
                 var success = await LoanService.DeleteLoanAsync(id);
                 if (success)
                 {
-                    AllLoans = await LoanService.GetLoansAsync();
-                    Loans = AllLoans;
+                    Loans = await LoanService.GetLoansAsync();
+                    ErrorMessage = null;
                 }
                 else
                 {

@@ -1,9 +1,11 @@
 @page "/warranties"
 @attribute [Authorize(Roles = "Admin,Manager")]
+@using CarBlazor.Components.Constants
 @using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
 @using CarBlazor.Components.Search
 @using CarBlazor.Services
+@using CarBlazor.Components.Datagrid
 @inject WarrantyService WarrantyService
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
@@ -23,77 +25,34 @@
 {
     <div class="alert alert-danger">@ErrorMessage</div>
 }
-
-<table class="table">
-    <thead>
-        <tr>
-            <th>Car</th>
-            <th>Type</th>
-            <th>Provider</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>Cost</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (Warranties != null && Warranties.Any())
-        {
-            @foreach (var warranty in Warranties)
-            {
-                <tr @onclick="() => ViewDetails(warranty.Id)" class="clickable-row">
-                    <td>@($"{warranty.Car?.Make} {warranty.Car?.Model} ({warranty.Car?.Year})")</td>
-                    <td>@warranty.WarrantyType?.Name</td>
-                    <td>@warranty.Provider</td>
-                    <td>@warranty.StartDate.ToShortDateString()</td>
-                    <td>@warranty.EndDate.ToShortDateString()</td>
-                    <td>@warranty.Cost.ToString("C")</td>
-                    <td>
-                        <button @onclick:stopPropagation="true" @onclick="() => DeleteConfirm(warranty.Id)"
-                                class="btn btn-sm btn-link text-danger">
-                            <i class="bi bi-trash fs-5"></i>
-                        </button>
-                    </td>
-                </tr>
-            }
-        }
-        else if (IsLoading)
-        {
-            <tr>
-                <td colspan="7">Loading...</td>
-            </tr>
-        }
-        else
-        {
-            <tr>
-                <td colspan="7">No warranties found</td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-<style>
-    .clickable-row {
-        cursor: pointer;
-    }
-
-    .clickable-row:hover {
-        background-color: #f5f5f5;
-    }
-</style>
+@if (IsLoading)
+{
+    <p>Loading...</p>
+}
+else if (Warranties == null || Warranties.Count == 0)
+{
+    <p>No warranties found</p>
+}
+else
+{
+    <Datagrid TItem="Warranty" Items="Warranties" Columns="_warrantyColumns" OnRowClick="HandleRowClick">
+        <RowActions Context="warranty">
+            <DeleteButton OnClick="@(() => DeleteConfirm(warranty.Id))" />
+        </RowActions>
+    </Datagrid>
+}
 
 @code {
-    private List<Warranty>? AllWarranties { get; set; }
     private List<Warranty>? Warranties { get; set; }
     private bool IsLoading { get; set; } = true;
     private string? ErrorMessage { get; set; }
+    private readonly List<DataGridColumn<Warranty>> _warrantyColumns = DatagridColumnDefinitions.WarrantyColumns;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            AllWarranties = await WarrantyService.GetWarrantiesAsync();
-            Warranties = AllWarranties;
+            Warranties = await WarrantyService.GetWarrantiesAsync();
         }
         catch (Exception ex)
         {
@@ -105,11 +64,11 @@
         }
     }
 
-    private void HandleSearch(string searchTerm)
+    private async Task HandleSearch(string searchTerm)
     {
         try
         {
-            Warranties = WarrantyService.SearchWarranties(searchTerm, AllWarranties);
+            Warranties = await WarrantyService.SearchWarrantiesAsync(searchTerm);
         }
         catch (Exception ex)
         {
@@ -117,9 +76,9 @@
         }
     }
 
-    private void ViewDetails(int id)
+    private void HandleRowClick(Warranty warranty)
     {
-        Navigation.NavigateTo($"warranties/details/{id}");
+        Navigation.NavigateTo($"warranties/details/{warranty.Id}");
     }
 
     private async Task DeleteConfirm(int id)
@@ -133,8 +92,7 @@
                 var success = await WarrantyService.DeleteWarrantyAsync(id);
                 if (success)
                 {
-                    AllWarranties = await WarrantyService.GetWarrantiesAsync();
-                    Warranties = AllWarranties;
+                    Warranties = await WarrantyService.GetWarrantiesAsync();
                 }
                 else
                 {

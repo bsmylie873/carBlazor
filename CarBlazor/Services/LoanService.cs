@@ -58,11 +58,11 @@ public class LoanService
         return true;
     }
     
-    public List<Loan>? SearchLoans(string searchTerm, List<Loan>? loans)
+    public async Task<List<Loan>> SearchLoansAsync(string searchTerm)
     {
-        if (string.IsNullOrWhiteSpace(searchTerm) || loans == null)
+        if (string.IsNullOrWhiteSpace(searchTerm))
         {
-            return loans;
+            return await GetLoansAsync();
         }
 
         var normalizedSearchTerm = searchTerm
@@ -71,7 +71,7 @@ public class LoanService
             .Replace("%", "")
             .Trim();
 
-        return loans
+        return await _context.Loan
             .Where(l =>
                 l.Status != null && l.Status.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
                 l.StartDate.ToShortDateString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
@@ -80,7 +80,7 @@ public class LoanService
                 l.InterestRate.ToString("P2").Replace("%", "").Contains(normalizedSearchTerm, StringComparison.OrdinalIgnoreCase) ||
                 l.MonthlyPayment.ToString("C").Replace(",", "").Contains(normalizedSearchTerm, StringComparison.OrdinalIgnoreCase) ||
                 l.RemainingBalance.ToString("C").Replace(",", "").Contains(normalizedSearchTerm, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+            .ToListAsync();
     }
     
     public async Task<List<LoanStatus>> GetLoanStatusesAsync()

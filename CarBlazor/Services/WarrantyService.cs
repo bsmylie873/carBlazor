@@ -69,12 +69,10 @@ public class WarrantyService
         return true;
     }
     
-    public List<Warranty>? SearchWarranties(string searchTerm, List<Warranty>? warranties)
+    public async Task<List<Warranty>> SearchWarrantiesAsync(string searchTerm)
     {
-        if (string.IsNullOrWhiteSpace(searchTerm) || warranties == null)
-        {
-            return warranties;
-        }
+        if (string.IsNullOrWhiteSpace(searchTerm))
+            return await GetWarrantiesAsync();
 
         var normalizedSearchTerm = searchTerm
             .Replace("$", "")
@@ -82,7 +80,7 @@ public class WarrantyService
             .Replace("%", "")
             .Trim();
 
-        return warranties
+        return await _context.Warranty
             .Where(w =>
                 (w.Car != null && (
                     (w.Car.Make != null && w.Car.Make.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
@@ -93,6 +91,6 @@ public class WarrantyService
                 w.StartDate.ToShortDateString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
                 w.EndDate.ToShortDateString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
                 w.Cost.ToString("C").Replace(",", "").Contains(normalizedSearchTerm, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+            .ToListAsync();
     }
 }
