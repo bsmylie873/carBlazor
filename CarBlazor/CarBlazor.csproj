@@ -31,7 +31,6 @@
 
     <ItemGroup>
       <AdditionalFiles Include="Components\Pages\CustomerPages\Create.razor" />
-      <AdditionalFiles Include="Components\Pages\CustomerPages\Delete.razor" />
       <AdditionalFiles Include="Components\Pages\CustomerPages\Details.razor" />
       <AdditionalFiles Include="Components\Pages\CustomerPages\Edit.razor" />
       <AdditionalFiles Include="Components\Pages\CustomerPages\Index.razor" />

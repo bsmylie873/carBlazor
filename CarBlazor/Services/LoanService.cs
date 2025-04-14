@@ -31,11 +31,10 @@ public class LoanService
             .FirstOrDefaultAsync(l => l.Id == id);
     }
     
-    public async Task<Loan> CreateLoanAsync(Loan loan)
+    public async Task CreateLoanAsync(Loan loan)
     {
         _context.Loan.Add(loan);
         await _context.SaveChangesAsync();
-        return loan;
     }
     
     public async Task<Loan?> UpdateLoanAsync(Loan loan)

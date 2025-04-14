@@ -42,11 +42,10 @@ public class WarrantyService
         return await _context.WarrantyType.ToListAsync();
     }
     
-    public async Task<Warranty> CreateWarrantyAsync(Warranty warranty)
+    public async Task CreateWarrantyAsync(Warranty warranty)
     {
         _context.Warranty.Add(warranty);
         await _context.SaveChangesAsync();
-        return warranty;
     }
     
     public async Task<Warranty?> UpdateWarrantyAsync(Warranty warranty)

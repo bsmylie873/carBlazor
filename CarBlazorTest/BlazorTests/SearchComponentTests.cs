@@ -2,7 +2,7 @@ using Bunit;
 using CarBlazor.Components.Search;
 using Microsoft.AspNetCore.Components.Web;
 
-namespace CarBlazorTest;
+namespace CarBlazorTest.BlazorTests;
 
 public class SearchComponentTests : TestContext
 {

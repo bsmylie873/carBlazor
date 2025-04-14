@@ -3,7 +3,7 @@ using CarBlazor.Components.Datagrid;
 using CarBlazor.Models;
 using Microsoft.AspNetCore.Components;
 
-namespace CarBlazorTest;
+namespace CarBlazorTest.BlazorTests;
 
 public class DatagridTests : IDisposable
 {
