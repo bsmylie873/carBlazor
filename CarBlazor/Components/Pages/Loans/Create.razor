@@ -1,8 +1,8 @@
 @page "/loans/create"
 @page "/loans/create/{CarId:int?}"
 @attribute [Authorize(Roles = "Admin,Manager")]
-@using CarBlazor.Models
-@using CarBlazor.Services
+@using CarBlazor.DAL.Models
+@using CarBlazor.Services.Services
 @using Microsoft.AspNetCore.Authorization
 @inject CarService CarService
 @inject CustomerService CustomerService

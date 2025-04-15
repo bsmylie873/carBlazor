@@ -1,8 +1,8 @@
+using CarBlazor.DAL.Models;
 using Microsoft.EntityFrameworkCore;
-using CarBlazor.Models;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
-namespace CarBlazor.Data
+namespace CarBlazor.DAL.Data
 {
     public class CarBlazorContext : DbContext
     {

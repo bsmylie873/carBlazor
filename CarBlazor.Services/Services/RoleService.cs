@@ -1,8 +1,8 @@
+using CarBlazor.DAL.Data;
+using CarBlazor.DAL.Models;
 using Microsoft.EntityFrameworkCore;
-using CarBlazor.Data;
-using CarBlazor.Models;
 
-namespace CarBlazor.Services;
+namespace CarBlazor.Services.Services;
 
 public class RoleService
 {

@@ -1,5 +1,4 @@
-namespace CarBlazor.Models;
-
+namespace CarBlazor.DAL.Models;
 public class LoanStatus
 {
     public int Id { get; set; }

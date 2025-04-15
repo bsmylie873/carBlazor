@@ -1,7 +1,7 @@
 @page "/cars/create"
 @attribute [Authorize(Roles = "Admin,Manager,User")]
-@using CarBlazor.Models
-@using CarBlazor.Services
+@using CarBlazor.DAL.Models
+@using CarBlazor.Services.Services
 @using Microsoft.AspNetCore.Authorization
 @inject CarService CarService
 @inject NavigationManager Navigation

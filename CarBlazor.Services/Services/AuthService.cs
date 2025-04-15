@@ -1,12 +1,13 @@
 using System.Security.Claims;
-using CarBlazor.Data;
-using CarBlazor.Models;
+using CarBlazor.DAL.Data;
+using CarBlazor.DAL.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
-using static CarBlazor.Utilities.Authentication;
+using static CarBlazor.DAL.Utilities.Authentication;
 
-namespace CarBlazor.Services;
+namespace CarBlazor.Services.Services;
 
 public class AuthService
 {

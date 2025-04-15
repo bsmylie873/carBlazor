@@ -8,11 +8,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.3">
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         <PrivateAssets>all</PrivateAssets>
       </PackageReference>
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.3" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.4" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.14" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.14">
         <PrivateAssets>all</PrivateAssets>
@@ -34,6 +35,10 @@
       <AdditionalFiles Include="Components\Pages\CustomerPages\Details.razor" />
       <AdditionalFiles Include="Components\Pages\CustomerPages\Edit.razor" />
       <AdditionalFiles Include="Components\Pages\CustomerPages\Index.razor" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\CarBlazor.Services\CarBlazor.Services.csproj" />
     </ItemGroup>
 
 </Project>

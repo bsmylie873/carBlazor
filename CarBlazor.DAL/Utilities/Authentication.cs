@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace CarBlazor.Utilities;
+namespace CarBlazor.DAL.Utilities;
 
 public class Authentication
 {

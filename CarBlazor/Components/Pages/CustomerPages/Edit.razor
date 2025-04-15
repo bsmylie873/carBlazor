@@ -1,8 +1,8 @@
 @page "/customers/edit/{Id:int}"
 @attribute [Authorize(Roles = "Admin,Manager")]
-@using CarBlazor.Models
+@using CarBlazor.DAL.Models
 @using Microsoft.AspNetCore.Authorization
-@using CarBlazor.Services
+@using CarBlazor.Services.Services
 @inject CustomerService CustomerService
 @inject CarService CarService
 @inject NavigationManager Navigation

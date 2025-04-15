@@ -1,8 +1,8 @@
 @page "/admin/users/create"
 @attribute [Authorize(Roles = "Admin")]
 @using System.ComponentModel.DataAnnotations
-@using CarBlazor.Models
-@using CarBlazor.Services
+@using CarBlazor.DAL.Models
+@using CarBlazor.Services.Services
 @using CarBlazor.ViewModels
 @using Microsoft.AspNetCore.Authorization
 @inject RoleService RoleService

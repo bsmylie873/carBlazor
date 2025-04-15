@@ -1,11 +1,11 @@
 @page "/cars"
 @attribute [Authorize]
 @using CarBlazor.Components.Constants
-@using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
 @using CarBlazor.Components.Datagrid
 @using CarBlazor.Components.Search
-@using CarBlazor.Services
+@using CarBlazor.DAL.Models
+@using CarBlazor.Services.Services
 @inject CarService CarService
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime

@@ -1,8 +1,9 @@
+using CarBlazor.DAL.Data;
+using CarBlazor.DAL.Models;
+using CarBlazor.DAL.Utilities;
 using Microsoft.EntityFrameworkCore;
-using CarBlazor.Data;
-using CarBlazor.Models;
 
-namespace CarBlazor.Services;
+namespace CarBlazor.Services.Services;
 
 public class UserService
 {
@@ -53,7 +54,7 @@ public class UserService
     
     public async Task<User> CreateUserAsync(string username, string password, string roleId)
     {
-        var (hash, salt) = Utilities.Authentication.HashPassword(password);
+        var (hash, salt) = Authentication.HashPassword(password);
 
         var user = new User
         {
@@ -86,7 +87,7 @@ public class UserService
         var user = await _context.Users.FindAsync(userId);
         if (user == null) return false;
         
-        var (hash, salt) = Utilities.Authentication.HashPassword(newPassword);
+        var (hash, salt) = Authentication.HashPassword(newPassword);
         
         user.PasswordHash = hash;
         user.Salt = salt;

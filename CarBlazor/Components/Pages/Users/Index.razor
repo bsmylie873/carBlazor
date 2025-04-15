@@ -1,11 +1,11 @@
 @page "/admin/users"
 @attribute [Authorize(Roles = "Admin")]
 @using CarBlazor.Components.Constants
-@using CarBlazor.Models
 @using Microsoft.AspNetCore.Authorization
 @using CarBlazor.Components.Search
-@using CarBlazor.Services
 @using CarBlazor.Components.Datagrid
+@using CarBlazor.DAL.Models
+@using CarBlazor.Services.Services
 @inject UserService UserService
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime

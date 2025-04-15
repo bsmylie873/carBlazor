@@ -1,17 +1,15 @@
 using CarBlazor.Components;
+using CarBlazor.DAL.Data;
 using Microsoft.EntityFrameworkCore;
-using CarBlazor.Data;
-using CarBlazor.Services;
-using CarBlazor.ViewModels;
+using CarBlazor.Services.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
-using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<CarBlazorContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("CarBlazorContext") ?? 
-                     "Data Source=CarBlazor.db"));
+                      "Data Source=../CarBlazor.DAL/CarBlazor.db"));
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

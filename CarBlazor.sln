@@ -4,6 +4,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarBlazor", "CarBlazor\CarB
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarBlazorTest", "CarBlazorTest\CarBlazorTest.csproj", "{3F2246C7-9034-45BF-86BD-429308B36372}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarBlazor.Services", "CarBlazor.Services\CarBlazor.Services.csproj", "{55D3FAB9-8BED-47A8-BABA-F9B7B9AE2B22}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarBlazor.DAL", "CarBlazor.DAL\CarBlazor.DAL.csproj", "{3A6A6607-35A6-4844-B77C-934FDF1445D4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +22,13 @@ Global
 		{3F2246C7-9034-45BF-86BD-429308B36372}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F2246C7-9034-45BF-86BD-429308B36372}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3F2246C7-9034-45BF-86BD-429308B36372}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55D3FAB9-8BED-47A8-BABA-F9B7B9AE2B22}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55D3FAB9-8BED-47A8-BABA-F9B7B9AE2B22}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55D3FAB9-8BED-47A8-BABA-F9B7B9AE2B22}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55D3FAB9-8BED-47A8-BABA-F9B7B9AE2B22}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A6A6607-35A6-4844-B77C-934FDF1445D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A6A6607-35A6-4844-B77C-934FDF1445D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A6A6607-35A6-4844-B77C-934FDF1445D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A6A6607-35A6-4844-B77C-934FDF1445D4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

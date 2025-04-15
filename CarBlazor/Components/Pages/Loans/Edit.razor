@@ -1,8 +1,8 @@
 @page "/loans/edit/{Id:int}"
 @attribute [Authorize(Roles = "Admin,Manager")]
-@using CarBlazor.Models
+@using CarBlazor.DAL.Models
 @using Microsoft.AspNetCore.Authorization
-@using CarBlazor.Services
+@using CarBlazor.Services.Services
 @inject CarService CarService
 @inject CustomerService CustomerService
 @inject LoanService LoanService

@@ -1,5 +1,5 @@
 using CarBlazor.Components.Datagrid;
-using CarBlazor.Models;
+using CarBlazor.DAL.Models;
 
 namespace CarBlazor.Components.Constants;
 

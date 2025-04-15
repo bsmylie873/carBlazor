@@ -1,8 +1,8 @@
-using CarBlazor.Data;
-using CarBlazor.Models;
+using CarBlazor.DAL.Data;
+using CarBlazor.DAL.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace CarBlazor.Services;
+namespace CarBlazor.Services.Services;
 
 public class WarrantyService
 {

@@ -1,6 +1,6 @@
 using Bunit;
 using CarBlazor.Components.Datagrid;
-using CarBlazor.Models;
+using CarBlazor.DAL.Models;
 using Microsoft.AspNetCore.Components;
 
 namespace CarBlazorTest.BlazorTests;

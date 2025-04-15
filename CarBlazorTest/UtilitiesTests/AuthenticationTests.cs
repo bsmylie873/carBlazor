@@ -1,4 +1,4 @@
-using CarBlazor.Utilities;
+using CarBlazor.DAL.Utilities;
 
 namespace CarBlazorTest.UtilitiesTests;
 
