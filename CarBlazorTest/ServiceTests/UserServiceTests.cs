@@ -171,6 +171,29 @@ public class UserServiceTests : IDisposable
         // Assert
         Assert.Equal(2, result.Count);
     }
+    
+    [Fact]
+    public async Task ResetPasswordAsync_WithExistingId_ShouldSetForcePasswordResetToTrue()
+    {
+        // Act
+        await _userService.ResetPasswordAsync(1);
+
+        // Assert
+        var updatedUser = await _context.Users.FindAsync(1);
+        Assert.NotNull(updatedUser);
+        Assert.True(updatedUser.ForcePasswordReset);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_WithNonExistingId_ShouldNotAffectExistingUsers()
+    {
+        // Act
+        await _userService.ResetPasswordAsync(99);
+    
+        // Assert - Verify existing users were not affected
+        var users = await _context.Users.ToListAsync();
+        Assert.All(users, user => Assert.False(user.ForcePasswordReset));
+    }
 
     public void Dispose()
     {

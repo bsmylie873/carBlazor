@@ -28,25 +28,6 @@ public class UserService
             .FirstOrDefaultAsync(u => u.Id == id);
     }
     
-    public async Task<User?> GetUserByUsernameAsync(string username)
-    {
-        return await _context.Users
-            .Include(u => u.Role)
-            .FirstOrDefaultAsync(u => u.Username == username);
-    }
-    
-    public async Task<List<Role>> GetRolesAsync(bool includeAdmin = false)
-    {
-        var query = _context.Roles.AsQueryable();
-        
-        if (!includeAdmin)
-        {
-            query = query.Where(r => r.Id != "Admin");
-        }
-        
-        return await query.ToListAsync();
-    }
-    
     public async Task<bool> UsernameExistsAsync(string username)
     {
         return await _context.Users.AnyAsync(u => u.Username == username);
@@ -82,20 +63,6 @@ public class UserService
         return existingUser;
     }
     
-    public async Task<bool> UpdatePasswordAsync(int userId, string newPassword)
-    {
-        var user = await _context.Users.FindAsync(userId);
-        if (user == null) return false;
-        
-        var (hash, salt) = Authentication.HashPassword(newPassword);
-        
-        user.PasswordHash = hash;
-        user.Salt = salt;
-        
-        await _context.SaveChangesAsync();
-        return true;
-    }
-    
     public async Task ResetPasswordAsync(int userId)
     {
         var user = await _context.Users.FindAsync(userId);
@@ -127,15 +94,5 @@ public class UserService
                 u.Role.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
                 u.CreatedAt.ToString("g").Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
             .ToList();
-    }
-    
-    public async Task<bool> ToggleForcePasswordResetAsync(int userId)
-    {
-        var user = await _context.Users.FindAsync(userId);
-        if (user == null) return false;
-    
-        user.ForcePasswordReset = !user.ForcePasswordReset;
-        await _context.SaveChangesAsync();
-        return true;
     }
 }
