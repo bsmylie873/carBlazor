@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarBlazor", "CarBlazor\CarBlazor.csproj", "{DFEF0420-04BB-4AE6-A2F4-BD62FE0BBD97}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarBlazor.Api", "CarBlazor.Api\CarBlazor.Api.csproj", "{DFEF0420-04BB-4AE6-A2F4-BD62FE0BBD97}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarBlazorTest", "CarBlazorTest\CarBlazorTest.csproj", "{3F2246C7-9034-45BF-86BD-429308B36372}"
 EndProject

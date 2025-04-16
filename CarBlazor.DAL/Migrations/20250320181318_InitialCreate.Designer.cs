@@ -20,7 +20,7 @@ namespace CarBlazor.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.3");
 
-            modelBuilder.Entity("CarBlazor.Models.Car", b =>
+            modelBuilder.Entity("CarBlazor.Api.Models.Car", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()

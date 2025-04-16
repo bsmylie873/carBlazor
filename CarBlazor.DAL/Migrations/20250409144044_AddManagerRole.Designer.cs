@@ -20,7 +20,7 @@ namespace CarBlazor.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.3");
 
-            modelBuilder.Entity("CarBlazor.Models.Car", b =>
+            modelBuilder.Entity("CarBlazor.Api.Models.Car", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -46,7 +46,7 @@ namespace CarBlazor.Migrations
                     b.ToTable("Car");
                 });
 
-            modelBuilder.Entity("CarBlazor.Models.Customer", b =>
+            modelBuilder.Entity("CarBlazor.Api.Models.Customer", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -72,7 +72,7 @@ namespace CarBlazor.Migrations
                     b.ToTable("Customer");
                 });
 
-            modelBuilder.Entity("CarBlazor.Models.CustomerCar", b =>
+            modelBuilder.Entity("CarBlazor.Api.Models.CustomerCar", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -99,7 +99,7 @@ namespace CarBlazor.Migrations
                     b.ToTable("CustomerCar");
                 });
 
-            modelBuilder.Entity("CarBlazor.Models.Loan", b =>
+            modelBuilder.Entity("CarBlazor.Api.Models.Loan", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -143,7 +143,7 @@ namespace CarBlazor.Migrations
                     b.ToTable("Loan");
                 });
 
-            modelBuilder.Entity("CarBlazor.Models.LoanStatus", b =>
+            modelBuilder.Entity("CarBlazor.Api.Models.LoanStatus", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -180,7 +180,7 @@ namespace CarBlazor.Migrations
                         });
                 });
 
-            modelBuilder.Entity("CarBlazor.Models.Role", b =>
+            modelBuilder.Entity("CarBlazor.Api.Models.Role", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
@@ -224,7 +224,7 @@ namespace CarBlazor.Migrations
                         });
                 });
 
-            modelBuilder.Entity("CarBlazor.Models.User", b =>
+            modelBuilder.Entity("CarBlazor.Api.Models.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -271,7 +271,7 @@ namespace CarBlazor.Migrations
                         });
                 });
 
-            modelBuilder.Entity("CarBlazor.Models.Warranty", b =>
+            modelBuilder.Entity("CarBlazor.Api.Models.Warranty", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -307,7 +307,7 @@ namespace CarBlazor.Migrations
                     b.ToTable("Warranty");
                 });
 
-            modelBuilder.Entity("CarBlazor.Models.WarrantyType", b =>
+            modelBuilder.Entity("CarBlazor.Api.Models.WarrantyType", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -339,15 +339,15 @@ namespace CarBlazor.Migrations
                         });
                 });
 
-            modelBuilder.Entity("CarBlazor.Models.CustomerCar", b =>
+            modelBuilder.Entity("CarBlazor.Api.Models.CustomerCar", b =>
                 {
-                    b.HasOne("CarBlazor.Models.Car", "Car")
+                    b.HasOne("CarBlazor.Api.Models.Car", "Car")
                         .WithMany()
                         .HasForeignKey("CarId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("CarBlazor.Models.Customer", "Customer")
+                    b.HasOne("CarBlazor.Api.Models.Customer", "Customer")
                         .WithMany("CustomerCars")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -358,21 +358,21 @@ namespace CarBlazor.Migrations
                     b.Navigation("Customer");
                 });
 
-            modelBuilder.Entity("CarBlazor.Models.Loan", b =>
+            modelBuilder.Entity("CarBlazor.Api.Models.Loan", b =>
                 {
-                    b.HasOne("CarBlazor.Models.Car", "Car")
+                    b.HasOne("CarBlazor.Api.Models.Car", "Car")
                         .WithMany()
                         .HasForeignKey("CarId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("CarBlazor.Models.Customer", "Customer")
+                    b.HasOne("CarBlazor.Api.Models.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("CarBlazor.Models.LoanStatus", "Status")
+                    b.HasOne("CarBlazor.Api.Models.LoanStatus", "Status")
                         .WithMany()
                         .HasForeignKey("StatusId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -385,9 +385,9 @@ namespace CarBlazor.Migrations
                     b.Navigation("Status");
                 });
 
-            modelBuilder.Entity("CarBlazor.Models.User", b =>
+            modelBuilder.Entity("CarBlazor.Api.Models.User", b =>
                 {
-                    b.HasOne("CarBlazor.Models.Role", "Role")
+                    b.HasOne("CarBlazor.Api.Models.Role", "Role")
                         .WithMany("Users")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -396,15 +396,15 @@ namespace CarBlazor.Migrations
                     b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("CarBlazor.Models.Warranty", b =>
+            modelBuilder.Entity("CarBlazor.Api.Models.Warranty", b =>
                 {
-                    b.HasOne("CarBlazor.Models.Car", "Car")
+                    b.HasOne("CarBlazor.Api.Models.Car", "Car")
                         .WithMany()
                         .HasForeignKey("CarId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("CarBlazor.Models.WarrantyType", "WarrantyType")
+                    b.HasOne("CarBlazor.Api.Models.WarrantyType", "WarrantyType")
                         .WithMany()
                         .HasForeignKey("WarrantyTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -415,12 +415,12 @@ namespace CarBlazor.Migrations
                     b.Navigation("WarrantyType");
                 });
 
-            modelBuilder.Entity("CarBlazor.Models.Customer", b =>
+            modelBuilder.Entity("CarBlazor.Api.Models.Customer", b =>
                 {
                     b.Navigation("CustomerCars");
                 });
 
-            modelBuilder.Entity("CarBlazor.Models.Role", b =>
+            modelBuilder.Entity("CarBlazor.Api.Models.Role", b =>
                 {
                     b.Navigation("Users");
                 });
