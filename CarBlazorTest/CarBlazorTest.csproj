@@ -23,7 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\CarBlazor.Api\CarBlazor.Api.csproj" />
+      <ProjectReference Include="..\CarBlazor\CarBlazor.csproj" />
     </ItemGroup>
 
 </Project>
