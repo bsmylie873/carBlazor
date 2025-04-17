@@ -30,7 +30,7 @@ public class CarServiceTests : IDisposable
         };
 
         // Seed database
-        _context.Car.AddRange(_testCars);
+        _context.Cars.AddRange(_testCars);
         _context.SaveChanges();
     }
 
@@ -95,7 +95,7 @@ public class CarServiceTests : IDisposable
         await _carService.CreateCarAsync(newCar);
 
         // Assert
-        var addedCar = await _context.Car.FindAsync(4);
+        var addedCar = await _context.Cars.FindAsync(4);
         Assert.NotNull(addedCar);
         Assert.Equal("Tesla", addedCar.Make);
         Assert.Equal("Model 3", addedCar.Model);
@@ -118,7 +118,7 @@ public class CarServiceTests : IDisposable
         Assert.Equal("Yellow", result.Color);
             
         // Verify in database
-        var dbCar = await _context.Car.FindAsync(1);
+        var dbCar = await _context.Cars.FindAsync(1);
         Assert.Equal("Yellow", dbCar.Color);
         Assert.Equal(2022, dbCar.Year);
     }
@@ -136,7 +136,7 @@ public class CarServiceTests : IDisposable
         Assert.Null(result);
             
         // Verify not in database
-        Assert.Null(await _context.Car.FindAsync(99));
+        Assert.Null(await _context.Cars.FindAsync(99));
     }
 
     [Fact]
@@ -147,7 +147,7 @@ public class CarServiceTests : IDisposable
 
         // Assert
         Assert.True(result);
-        Assert.Null(await _context.Car.FindAsync(2));
+        Assert.Null(await _context.Cars.FindAsync(2));
     }
 
     [Fact]

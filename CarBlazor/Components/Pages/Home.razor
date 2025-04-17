@@ -106,9 +106,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        CarsCount = await Context.Car.CountAsync();
-        CustomersCount = await Context.Customer.CountAsync();
-        LoansCount = await Context.Loan.CountAsync();
-        WarrantiesCount = await Context.Warranty.CountAsync();
+        CarsCount = await Context.Cars.CountAsync();
+        CustomersCount = await Context.Customers.CountAsync();
+        LoansCount = await Context.Loans.CountAsync();
+        WarrantiesCount = await Context.Warranties.CountAsync();
     }
 }

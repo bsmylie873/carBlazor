@@ -15,20 +15,20 @@ public class CustomerService
     
     public async Task<List<Customer>> GetCustomersAsync()
     {
-        return await _context.Customer
+        return await _context.Customers
             .Include(c => c.CustomerCars)
             .ToListAsync();
     }
     
     public async Task<Customer?> GetCustomerByIdAsync(int id)
     {
-        return await _context.Customer
+        return await _context.Customers
             .FirstOrDefaultAsync(c => c.Id == id);
     }
     
     public async Task<List<CustomerCar>> GetCustomerCarsAsync(int customerId)
     {
-        return await _context.CustomerCar
+        return await _context.CustomerCars
             .Include(cc => cc.Car)
             .Where(cc => cc.CustomerId == customerId)
             .ToListAsync();
@@ -36,19 +36,20 @@ public class CustomerService
     
     public async Task CreateCustomerAsync(Customer customer)
     {
-        _context.Customer.Add(customer);
+        _context.Customers.Add(customer);
         await _context.SaveChangesAsync();
     }
     
     public async Task AddCarToCustomerAsync(CustomerCar customerCar)
     {
-        _context.CustomerCar.Add(customerCar);
+        customerCar.PurchaseDate = customerCar.PurchaseDate.ToUniversalTime();
+        _context.CustomerCars.Add(customerCar);
         await _context.SaveChangesAsync();
     }
     
     public async Task<Customer?> UpdateCustomerAsync(Customer customer)
     {
-        var existingCustomer = await _context.Customer.FindAsync(customer.Id);
+        var existingCustomer = await _context.Customers.FindAsync(customer.Id);
         if (existingCustomer == null) return null;
 
         _context.Entry(existingCustomer).CurrentValues.SetValues(customer);
@@ -58,20 +59,20 @@ public class CustomerService
     
     public async Task<bool> DeleteCustomerAsync(int id)
     {
-        var customer = await _context.Customer.FindAsync(id);
+        var customer = await _context.Customers.FindAsync(id);
         if (customer == null) return false;
 
-        _context.Customer.Remove(customer);
+        _context.Customers.Remove(customer);
         await _context.SaveChangesAsync();
         return true;
     }
     
     public async Task<bool> RemoveCarFromCustomerAsync(int customerCarId)
     {
-        var customerCar = await _context.CustomerCar.FindAsync(customerCarId);
+        var customerCar = await _context.CustomerCars.FindAsync(customerCarId);
         if (customerCar == null) return false;
 
-        _context.CustomerCar.Remove(customerCar);
+        _context.CustomerCars.Remove(customerCar);
         await _context.SaveChangesAsync();
         return true;
     }
@@ -81,7 +82,7 @@ public class CustomerService
         if (string.IsNullOrWhiteSpace(searchTerm))
             return await GetCustomersAsync();
 
-        return await _context.Customer
+        return await _context.Customers
             .Include(c => c.CustomerCars)
             .Where(c => 
                 c.FirstName.Contains(searchTerm) ||

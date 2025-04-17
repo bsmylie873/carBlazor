@@ -74,9 +74,9 @@ public class LoanServiceTests : IDisposable
         ];
 
         // Seed database
-        _context.Car.AddRange(testCars);
-        _context.Customer.AddRange(testCustomers);
-        _context.Loan.AddRange(testLoans);
+        _context.Cars.AddRange(testCars);
+        _context.Customers.AddRange(testCustomers);
+        _context.Loans.AddRange(testLoans);
         _context.SaveChanges();
     }
 
@@ -133,7 +133,7 @@ public class LoanServiceTests : IDisposable
         await _loanService.CreateLoanAsync(newLoan);
 
         // Assert
-        var addedLoan = await _context.Loan.FindAsync(4);
+        var addedLoan = await _context.Loans.FindAsync(4);
         Assert.NotNull(addedLoan);
         Assert.Equal(2, addedLoan.CustomerId);
         Assert.Equal(2, addedLoan.CarId);
@@ -163,7 +163,7 @@ public class LoanServiceTests : IDisposable
         Assert.Equal(22000, result.Amount);
 
         // Verify in database
-        var dbLoan = await _context.Loan.FindAsync(1);
+        var dbLoan = await _context.Loans.FindAsync(1);
         Assert.Equal(22000, dbLoan!.Amount);
     }
 
@@ -194,7 +194,7 @@ public class LoanServiceTests : IDisposable
 
         // Assert
         Assert.True(result);
-        Assert.Null(await _context.Loan.FindAsync(3));
+        Assert.Null(await _context.Loans.FindAsync(3));
     }
 
     [Fact]

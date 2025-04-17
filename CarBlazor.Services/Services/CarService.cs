@@ -15,32 +15,34 @@ public class CarService
     
     public async Task<List<Car>> GetCarsAsync()
     {
-        return await _context.Car.ToListAsync();
+        return await _context.Cars.ToListAsync();
     }
     
     public async Task<Car?> GetCarByIdAsync(int id)
     {
-        return await _context.Car.FindAsync(id);
+        return await _context.Cars.FindAsync(id);
     }
     
     public async Task<List<Car>> GetCarsNotAssociatedWithCustomerAsync(List<int> customerCarIds)
     {
-        return await _context.Car
+        return await _context.Cars
             .Where(c => !customerCarIds.Contains(c.Id))
             .ToListAsync();
     }
     
     public async Task CreateCarAsync(Car car)
     {
-        _context.Car.Add(car);
+        if (car.ProductionDate != null) car.ProductionDate = car.ProductionDate.Value.ToUniversalTime();
+        _context.Cars.Add(car);
         await _context.SaveChangesAsync();
     }
     
     public async Task<Car?> UpdateCarAsync(Car car)
     {
-        var existingCar = await _context.Car.FindAsync(car.Id);
+        var existingCar = await _context.Cars.FindAsync(car.Id);
         if (existingCar == null) return null;
 
+        if (car.ProductionDate != null) car.ProductionDate = car.ProductionDate.Value.ToUniversalTime();
         _context.Entry(existingCar).CurrentValues.SetValues(car);
         await _context.SaveChangesAsync();
         return car;
@@ -48,10 +50,10 @@ public class CarService
     
     public async Task<bool> DeleteCarAsync(int id)
     {
-        var car = await _context.Car.FindAsync(id);
+        var car = await _context.Cars.FindAsync(id);
         if (car == null) return false;
 
-        _context.Car.Remove(car);
+        _context.Cars.Remove(car);
         await _context.SaveChangesAsync();
         return true;
     }
@@ -61,7 +63,7 @@ public class CarService
         if (string.IsNullOrWhiteSpace(searchTerm))
             return await GetCarsAsync();
 
-        return await _context.Car
+        return await _context.Cars
             .Where(c => 
                 c.Make.Contains(searchTerm) || 
                 c.Model.Contains(searchTerm) || 

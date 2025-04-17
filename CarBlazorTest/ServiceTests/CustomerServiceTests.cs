@@ -58,9 +58,9 @@ public class CustomerServiceTests : IDisposable
         ];
 
         // Seed database
-        _context.Car.AddRange(_testCars);
-        _context.Customer.AddRange(_testCustomers);
-        _context.CustomerCar.AddRange(_testCustomerCars);
+        _context.Cars.AddRange(_testCars);
+        _context.Customers.AddRange(_testCustomers);
+        _context.CustomerCars.AddRange(_testCustomerCars);
         _context.SaveChanges();
     }
 
@@ -146,7 +146,7 @@ public class CustomerServiceTests : IDisposable
         await _customerService.CreateCustomerAsync(newCustomer);
 
         // Assert
-        var addedCustomer = await _context.Customer.FindAsync(4);
+        var addedCustomer = await _context.Customers.FindAsync(4);
         Assert.NotNull(addedCustomer);
         Assert.Equal("Alice", addedCustomer.FirstName);
         Assert.Equal("Brown", addedCustomer.LastName);
@@ -167,7 +167,7 @@ public class CustomerServiceTests : IDisposable
         await _customerService.AddCarToCustomerAsync(customerCar);
 
         // Assert
-        var addedCustomerCar = await _context.CustomerCar.FindAsync(4);
+        var addedCustomerCar = await _context.CustomerCars.FindAsync(4);
         Assert.NotNull(addedCustomerCar);
         Assert.Equal(3, addedCustomerCar.CustomerId);
         Assert.Equal(1, addedCustomerCar.CarId);
@@ -196,7 +196,7 @@ public class CustomerServiceTests : IDisposable
         Assert.Equal("john.updated@example.com", result.Email);
             
         // Verify in database
-        var dbCustomer = await _context.Customer.FindAsync(1);
+        var dbCustomer = await _context.Customers.FindAsync(1);
         Assert.Equal("john.updated@example.com", dbCustomer!.Email);
         Assert.Equal("987-654-3210", dbCustomer.PhoneNumber);
         Assert.Equal("Updated Address", dbCustomer.Address);
@@ -229,7 +229,7 @@ public class CustomerServiceTests : IDisposable
 
         // Assert
         Assert.True(result);
-        Assert.Null(await _context.Customer.FindAsync(3));
+        Assert.Null(await _context.Customers.FindAsync(3));
     }
 
     [Fact]
@@ -250,7 +250,7 @@ public class CustomerServiceTests : IDisposable
 
         // Assert
         Assert.True(result);
-        Assert.Null(await _context.CustomerCar.FindAsync(2));
+        Assert.Null(await _context.CustomerCars.FindAsync(2));
     }
 
     [Fact]

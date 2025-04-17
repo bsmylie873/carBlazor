@@ -10,12 +10,14 @@ A POC Blazor web application for managing car dealership operations including in
 ## Technologies Used
 - **Blazor**: A web framework for building interactive web applications using C# and .NET.
 - **Entity Framework Core**: An ORM for .NET that enables database operations using C# objects.
-- **SQLite**: A lightweight database engine for local data storage.
+- **PostgreSQL**: A powerful, open-source relational database system.
+- **Docker**: Containerization platform for running PostgreSQL.
 - **Bootstrap**: A CSS framework for responsive design and styling.
 
 ## Getting Started
 ### Prerequisites
 - .NET 8.0 SDK or later
+- Docker and Docker Compose
 
 ### Installation
 1. Clone the repository
@@ -26,15 +28,19 @@ A POC Blazor web application for managing car dealership operations including in
    ```bash
    cd car-blazor
    ```
-3. Restore the dependencies:
+3. Start the PostgreSQL database using Docker Compose
+   ```bash
+   docker-compose up -d
+   ```
+4. Restore the dependencies:
    ```bash
    dotnet restore
    ```
-4. Apply the migrations:
+5. Apply the migrations:
    ```bash
    dotnet ef database update
    ```
-5. Run the application:
+6. Run the application:
    ```bash
     dotnet run
     ```

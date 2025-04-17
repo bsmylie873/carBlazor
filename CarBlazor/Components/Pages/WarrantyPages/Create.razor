@@ -117,6 +117,10 @@
             {
                 Warranty.CarId = CarId.Value;
             }
+            else if (Cars != null && Cars.Any())
+            {
+                Warranty.CarId = Cars.First().Id;
+            }
         }
         catch (Exception ex)
         {

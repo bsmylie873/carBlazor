@@ -8,8 +8,9 @@ using Microsoft.AspNetCore.Components.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<CarBlazorContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("CarBlazorContext") ?? 
-                      "Data Source=../CarBlazor.DAL/CarBlazor.db"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("CarBlazorContext") ??
+                      "Host=localhost;Port=5432;Database=carblazor;Username=carblazor;Password=password123;"));
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

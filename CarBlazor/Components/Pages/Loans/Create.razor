@@ -30,6 +30,7 @@
             <div class="form-group mb-3">
                 <label for="carId">Car</label>
                 <InputSelect id="carId" @bind-Value="Loan.CarId" class="form-control">
+                    <option value="">-- Select Car --</option>
                     @if (Cars != null)
                     {
                         @foreach (var car in Cars)
@@ -118,6 +119,9 @@
 @code {
     [Parameter]
     public int? CarId { get; set; }
+    
+    [Parameter]
+    public int? CustomerId { get; set; }
 
     private Loan Loan { get; set; } = new()
     {
@@ -147,6 +151,19 @@
             if (CarId.HasValue)
             {
                 Loan.CarId = CarId.Value;
+            }
+            else if (Cars != null && Cars.Any())
+            {
+                Loan.CarId = Cars.First().Id;
+            }
+
+            if (CustomerId.HasValue)
+            {
+                Loan.CustomerId = CustomerId.Value;
+            }
+            else if (Customers != null && Customers.Any())
+            {
+                Loan.CustomerId = Customers.First().Id;
             }
         }
         catch (Exception ex)

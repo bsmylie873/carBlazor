@@ -15,7 +15,7 @@ public class WarrantyService
     
     public async Task<List<Warranty>> GetWarrantiesAsync()
     {
-        return await _context.Warranty
+        return await _context.Warranties
             .Include(w => w.WarrantyType)
             .Include(w => w.Car)
             .ToListAsync();
@@ -23,7 +23,7 @@ public class WarrantyService
     
     public async Task<Warranty?> GetWarrantyByIdAsync(int id)
     {
-        return await _context.Warranty
+        return await _context.Warranties
             .Include(w => w.WarrantyType)
             .Include(w => w.Car)
             .FirstOrDefaultAsync(w => w.Id == id);
@@ -31,7 +31,7 @@ public class WarrantyService
     
     public async Task<List<Warranty>> GetWarrantiesForCarAsync(int carId)
     {
-        return await _context.Warranty
+        return await _context.Warranties
             .Include(w => w.WarrantyType)
             .Where(w => w.CarId == carId)
             .ToListAsync();
@@ -39,20 +39,24 @@ public class WarrantyService
     
     public async Task<List<WarrantyType>> GetWarrantyTypesAsync()
     {
-        return await _context.WarrantyType.ToListAsync();
+        return await _context.WarrantyTypes.ToListAsync();
     }
     
     public async Task CreateWarrantyAsync(Warranty warranty)
     {
-        _context.Warranty.Add(warranty);
+        warranty.StartDate = warranty.StartDate.ToUniversalTime();
+        warranty.EndDate = warranty.EndDate.ToUniversalTime();
+        _context.Warranties.Add(warranty);
         await _context.SaveChangesAsync();
     }
     
     public async Task<Warranty?> UpdateWarrantyAsync(Warranty warranty)
     {
-        var existingWarranty = await _context.Warranty.FindAsync(warranty.Id);
+        var existingWarranty = await _context.Warranties.FindAsync(warranty.Id);
         if (existingWarranty == null) return null;
 
+        warranty.StartDate = warranty.StartDate.ToUniversalTime();
+        warranty.EndDate = warranty.EndDate.ToUniversalTime();
         _context.Entry(existingWarranty).CurrentValues.SetValues(warranty);
         await _context.SaveChangesAsync();
         return warranty;
@@ -60,10 +64,10 @@ public class WarrantyService
     
     public async Task<bool> DeleteWarrantyAsync(int id)
     {
-        var warranty = await _context.Warranty.FindAsync(id);
+        var warranty = await _context.Warranties.FindAsync(id);
         if (warranty == null) return false;
 
-        _context.Warranty.Remove(warranty);
+        _context.Warranties.Remove(warranty);
         await _context.SaveChangesAsync();
         return true;
     }
@@ -79,7 +83,7 @@ public class WarrantyService
             .Replace("%", "")
             .Trim();
 
-        return await _context.Warranty
+        return await _context.Warranties
             .Where(w =>
                 (w.Car != null && (
                     (w.Car.Make != null && w.Car.Make.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||

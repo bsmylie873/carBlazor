@@ -57,9 +57,9 @@ public class WarrantyServiceTests : IDisposable
             }
         };
 
-        _context.WarrantyType.AddRange(warrantyTypes);
-        _context.Car.AddRange(cars);
-        _context.Warranty.AddRange(warranties);
+        _context.WarrantyTypes.AddRange(warrantyTypes);
+        _context.Cars.AddRange(cars);
+        _context.Warranties.AddRange(warranties);
         _context.SaveChanges();
     }
 
@@ -134,7 +134,7 @@ public class WarrantyServiceTests : IDisposable
         await _warrantyService.CreateWarrantyAsync(newWarranty);
 
         // Assert
-        var addedWarranty = await _context.Warranty.FindAsync(3);
+        var addedWarranty = await _context.Warranties.FindAsync(3);
         Assert.NotNull(addedWarranty);
         Assert.Equal("Provider C", addedWarranty.Provider);
         Assert.Equal(1, addedWarranty.CarId);
@@ -195,7 +195,7 @@ public class WarrantyServiceTests : IDisposable
 
         // Assert
         Assert.True(result);
-        Assert.Null(await _context.Warranty.FindAsync(1));
+        Assert.Null(await _context.Warranties.FindAsync(1));
     }
 
     [Fact]
