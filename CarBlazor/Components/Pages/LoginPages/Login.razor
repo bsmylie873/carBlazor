@@ -15,11 +15,6 @@
                     <div class="alert alert-danger">@_errorMessage</div>
                 }
                 <form method="post" action="/api/account/login">
-                    @if (_errorMessage != null)
-                    {
-                        <div class="alert alert-danger">@_errorMessage</div>
-                    }
-
                     <div class="mb-3">
                         <label for="username" class="form-label">Username</label>
                         <input name="Username" class="form-control" id="username" required />
@@ -34,7 +29,6 @@
                         <input type="checkbox" name="RememberMe" class="form-check-input" id="rememberMe" />
                         <label class="form-check-label" for="rememberMe">Remember me</label>
                     </div>
-
                     <button type="submit" class="btn btn-primary w-100">Login</button>
                 </form>
             </div>
