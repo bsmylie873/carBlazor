@@ -4,9 +4,12 @@
 @using Microsoft.AspNetCore.Authorization
 @using CarBlazor.Components.Search
 @using CarBlazor.Components.Datagrid
+@using CarBlazor.Components.FormModal
 @using CarBlazor.DAL.Models
 @using CarBlazor.Services.Services
 @inject LoanService LoanService
+@inject CarService CarService
+@inject CustomerService CustomerService
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
 @rendermode InteractiveServer
@@ -15,10 +18,10 @@
 
 <h1>Loans</h1>
 
-<Search Placeholder="Search loans..." OnSearch="HandleSearchAsync" />
+<Search Placeholder="Search loans..." OnSearch="HandleSearchAsync"/>
 
 <p>
-    <a href="/loans/create" class="btn btn-primary">Create New</a>
+    <button class="btn btn-primary" @onclick="OpenCreateModal">Create New</button>
 </p>
 
 @if (!string.IsNullOrEmpty(ErrorMessage))
@@ -37,30 +40,163 @@ else
 {
     <Datagrid TItem="Loan" Items="Loans" Columns="_loanColumns" OnRowClick="HandleRowClick">
         <RowActions Context="loan">
-            <DeleteButton OnClick="@(() => DeleteConfirm(loan.Id))" />
+            <DeleteButton OnClick="@(() => DeleteConfirm(loan.Id))"/>
         </RowActions>
     </Datagrid>
 }
 
+<FormModal TModel="Loan"
+           Model="NewLoan"
+           Title="Create Loan"
+           SaveButtonText="Create"
+           OnSave="CreateLoan"
+           OnCancel="CloseModal"
+           @ref="formModal">
+    <div class="form-group mb-3">
+        <label for="carId">Car</label>
+        <InputSelect id="carId" @bind-Value="NewLoan.CarId" class="form-control">
+            <option value="">-- Select Car --</option>
+            @if (Cars != null)
+            {
+                @foreach (var car in Cars)
+                {
+                    <option value="@car.Id">@($"{car.Make} {car.Model} ({car.Year})")</option>
+                }
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => NewLoan.CarId)"/>
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="amount">Amount</label>
+        <InputNumber id="amount" @bind-Value="NewLoan.Amount" class="form-control"/>
+        <ValidationMessage For="@(() => NewLoan.Amount)"/>
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="interestRate">Interest Rate</label>
+        <InputNumber id="interestRate" @bind-Value="NewLoan.InterestRate" class="form-control"/>
+        <small class="form-text text-muted">Enter as decimal (e.g., 0.05 for 5%)</small>
+        <ValidationMessage For="@(() => NewLoan.InterestRate)"/>
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="startDate">Start Date</label>
+        <InputDate id="startDate" @bind-Value="NewLoan.StartDate" class="form-control"/>
+        <ValidationMessage For="@(() => NewLoan.StartDate)"/>
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="endDate">End Date</label>
+        <InputDate id="endDate" @bind-Value="NewLoan.EndDate" class="form-control"/>
+        <ValidationMessage For="@(() => NewLoan.EndDate)"/>
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="monthlyPayment">Monthly Payment</label>
+        <InputNumber id="monthlyPayment" @bind-Value="NewLoan.MonthlyPayment" class="form-control"/>
+        <ValidationMessage For="@(() => NewLoan.MonthlyPayment)"/>
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="remainingBalance">Remaining Balance</label>
+        <InputNumber id="remainingBalance" @bind-Value="NewLoan.RemainingBalance" class="form-control"/>
+        <ValidationMessage For="@(() => NewLoan.RemainingBalance)"/>
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="statusId">Loan Status</label>
+        <InputSelect id="statusId" @bind-Value="NewLoan.StatusId" class="form-control">
+            @if (LoanStatuses != null)
+            {
+                @foreach (var status in LoanStatuses)
+                {
+                    <option value="@status.Id">@status.Name</option>
+                }
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => NewLoan.StatusId)"/>
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="customerId">Customer</label>
+        <InputSelect id="customerId" @bind-Value="NewLoan.CustomerId" class="form-control">
+            <option value="">-- Select Customer --</option>
+            @if (Customers != null)
+            {
+                @foreach (var customer in Customers)
+                {
+                    <option value="@customer.Id">@customer.FullName</option>
+                }
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => NewLoan.CustomerId)"/>
+    </div>
+</FormModal>
+
 @code {
     private List<Loan>? Loans { get; set; }
+    private List<Car>? Cars { get; set; }
+    private List<Customer>? Customers { get; set; }
+    private List<LoanStatus>? LoanStatuses { get; set; }
+    private Loan NewLoan { get; set; } = new()
+    {
+        StartDate = DateTime.Today,
+        EndDate = DateTime.Today.AddYears(5)
+    };
     private bool IsLoading { get; set; } = true;
     private string? ErrorMessage { get; set; }
     private readonly List<DataGridColumn<Loan>> _loanColumns = DatagridColumnDefinitions.LoanColumns;
+    private FormModal<Loan>? formModal;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             Loans = await LoanService.GetLoansAsync();
+            Cars = await CarService.GetCarsAsync();
+            Customers = await CustomerService.GetCustomersAsync();
+            LoanStatuses = await LoanService.GetLoanStatusesAsync();
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Error loading loans: {ex.Message}";
+            ErrorMessage = $"Error loading data: {ex.Message}";
         }
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    private void OpenCreateModal()
+    {
+        NewLoan = new Loan
+        {
+            StartDate = DateTime.Today,
+            EndDate = DateTime.Today.AddYears(5)
+        };
+        
+        if (LoanStatuses?.Any() == true)
+            NewLoan.StatusId = LoanStatuses.First().Id;
+
+        formModal?.Show();
+    }
+
+    private void CloseModal()
+    {
+        formModal?.Hide();
+    }
+
+    private async Task CreateLoan(Loan loan)
+    {
+        try
+        {
+            await LoanService.CreateLoanAsync(loan);
+            Loans = await LoanService.GetLoansAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error creating loan: {ex.Message}";
         }
     }
 

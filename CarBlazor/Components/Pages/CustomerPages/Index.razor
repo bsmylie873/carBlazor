@@ -4,6 +4,7 @@
 @using CarBlazor.Components.Datagrid
 @using Microsoft.AspNetCore.Authorization
 @using CarBlazor.Components.Search
+@using CarBlazor.Components.FormModal
 @using CarBlazor.DAL.Models
 @using CarBlazor.Services.Services
 @inject CustomerService CustomerService
@@ -18,7 +19,7 @@
 <Search Placeholder="Search customers..." OnSearch="HandleSearch"/>
 
 <p>
-    <a href="/customers/create" class="btn btn-primary">Create New</a>
+    <button class="btn btn-primary" @onclick="OpenCreateModal">Create New</button>
 </p>
 
 @if (!string.IsNullOrEmpty(ErrorMessage))
@@ -42,11 +43,51 @@ else
     </Datagrid>
 }
 
+<FormModal TModel="Customer"
+           Model="NewCustomer"
+           Title="Create Customer"
+           SaveButtonText="Create"
+           OnSave="CreateCustomer"
+           OnCancel="CloseModal"
+           @ref="formModal">
+    <div class="form-group mb-3">
+        <label for="firstName">First Name</label>
+        <InputText id="firstName" @bind-Value="NewCustomer.FirstName" class="form-control" />
+        <ValidationMessage For="@(() => NewCustomer.FirstName)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="lastName">Last Name</label>
+        <InputText id="lastName" @bind-Value="NewCustomer.LastName" class="form-control" />
+        <ValidationMessage For="@(() => NewCustomer.LastName)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="email">Email</label>
+        <InputText id="email" @bind-Value="NewCustomer.Email" class="form-control" />
+        <ValidationMessage For="@(() => NewCustomer.Email)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="phone">Phone</label>
+        <InputText id="phone" @bind-Value="NewCustomer.PhoneNumber" class="form-control" />
+        <ValidationMessage For="@(() => NewCustomer.PhoneNumber)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="address">Address</label>
+        <InputText id="address" @bind-Value="NewCustomer.Address" class="form-control" />
+        <ValidationMessage For="@(() => NewCustomer.Address)" />
+    </div>
+</FormModal>
+
 @code {
     private List<Customer>? Customers { get; set; }
+    private Customer NewCustomer { get; set; } = new();
     private bool IsLoading { get; set; } = true;
-    private string? ErrorMessage { get; set; }  
+    private string? ErrorMessage { get; set; }
     private readonly List<DataGridColumn<Customer>> _customerColumns = DatagridColumnDefinitions.CustomerColumns;
+    private FormModal<Customer>? formModal;
 
     protected override async Task OnInitializedAsync()
     {
@@ -61,6 +102,30 @@ else
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    private void OpenCreateModal()
+    {
+        NewCustomer = new Customer();
+        formModal?.Show();
+    }
+
+    private void CloseModal()
+    {
+        formModal?.Hide();
+    }
+
+    private async Task CreateCustomer(Customer customer)
+    {
+        try
+        {
+            await CustomerService.CreateCustomerAsync(customer);
+            Customers = await CustomerService.GetCustomersAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error creating customer: {ex.Message}";
         }
     }
 
@@ -108,7 +173,6 @@ else
         catch (Exception ex)
         {
             ErrorMessage = $"Error deleting customer: {ex.Message}";
-
         }
     }
 }

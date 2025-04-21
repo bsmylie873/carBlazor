@@ -4,9 +4,11 @@
 @using Microsoft.AspNetCore.Authorization
 @using CarBlazor.Components.Search
 @using CarBlazor.Components.Datagrid
+@using CarBlazor.Components.FormModal
 @using CarBlazor.DAL.Models
 @using CarBlazor.Services.Services
 @inject WarrantyService WarrantyService
+@inject CarService CarService
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
 @rendermode InteractiveServer
@@ -18,7 +20,7 @@
 <Search Placeholder="Search warranties..." OnSearch="HandleSearch" />
 
 <p>
-    <a href="/warranties/create" class="btn btn-primary">Create New</a>
+    <button class="btn btn-primary" @onclick="OpenCreateModal">Create New</button>
 </p>
 
 @if (!string.IsNullOrEmpty(ErrorMessage))
@@ -42,25 +44,130 @@ else
     </Datagrid>
 }
 
+<FormModal TModel="Warranty"
+           Model="NewWarranty"
+           Title="Create Warranty"
+           SaveButtonText="Create"
+           OnSave="CreateWarranty"
+           OnCancel="CloseModal"
+           @ref="formModal">
+    <div class="form-group mb-3">
+        <label for="carId">Car</label>
+        <InputSelect id="carId" @bind-Value="NewWarranty.CarId" class="form-control">
+            <option value="">-- Select Car --</option>
+            @if (Cars != null)
+            {
+                @foreach (var car in Cars)
+                {
+                    <option value="@car.Id">@($"{car.Make} {car.Model} ({car.Year})")</option>
+                }
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => NewWarranty.CarId)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="warrantyTypeId">Warranty Type</label>
+        <InputSelect id="warrantyTypeId" @bind-Value="NewWarranty.WarrantyTypeId" class="form-control">
+            @if (WarrantyTypes != null)
+            {
+                @foreach (var type in WarrantyTypes)
+                {
+                    <option value="@type.Id">@type.Name</option>
+                }
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => NewWarranty.WarrantyTypeId)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="provider">Provider</label>
+        <InputText id="provider" @bind-Value="NewWarranty.Provider" class="form-control" />
+        <ValidationMessage For="@(() => NewWarranty.Provider)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="startDate">Start Date</label>
+        <InputDate id="startDate" @bind-Value="NewWarranty.StartDate" class="form-control" />
+        <ValidationMessage For="@(() => NewWarranty.StartDate)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="endDate">End Date</label>
+        <InputDate id="endDate" @bind-Value="NewWarranty.EndDate" class="form-control" />
+        <ValidationMessage For="@(() => NewWarranty.EndDate)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="coverageType">Coverage Details</label>
+        <InputText id="coverageType" @bind-Value="NewWarranty.CoverageDetails" class="form-control" />
+        <ValidationMessage For="@(() => NewWarranty.CoverageDetails)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="cost">Cost</label>
+        <InputNumber id="cost" @bind-Value="NewWarranty.Cost" class="form-control" />
+        <ValidationMessage For="@(() => NewWarranty.Cost)" />
+    </div>
+</FormModal>
+
 @code {
     private List<Warranty>? Warranties { get; set; }
+    private List<Car>? Cars { get; set; }
+    private Warranty NewWarranty { get; set; } = new()
+    {
+        StartDate = DateTime.Today,
+        EndDate = DateTime.Today.AddYears(3)
+    };
+    private List<WarrantyType>? WarrantyTypes { get; set; }
     private bool IsLoading { get; set; } = true;
     private string? ErrorMessage { get; set; }
     private readonly List<DataGridColumn<Warranty>> _warrantyColumns = DatagridColumnDefinitions.WarrantyColumns;
+    private FormModal<Warranty>? formModal;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             Warranties = await WarrantyService.GetWarrantiesAsync();
+            Cars = await CarService.GetCarsAsync();
+            WarrantyTypes = await WarrantyService.GetWarrantyTypesAsync();
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Error loading warranties: {ex.Message}";
+            ErrorMessage = $"Error loading data: {ex.Message}";
         }
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    private void OpenCreateModal()
+    {
+        NewWarranty = new Warranty
+        {
+            StartDate = DateTime.Today,
+            EndDate = DateTime.Today.AddYears(3)
+        };
+        formModal?.Show();
+    }
+
+    private void CloseModal()
+    {
+        formModal?.Hide();
+    }
+
+    private async Task CreateWarranty(Warranty warranty)
+    {
+        try
+        {
+            await WarrantyService.CreateWarrantyAsync(warranty);
+            Warranties = await WarrantyService.GetWarrantiesAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error creating warranty: {ex.Message}";
         }
     }
 

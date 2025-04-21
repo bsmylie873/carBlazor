@@ -4,9 +4,12 @@
 @using Microsoft.AspNetCore.Authorization
 @using CarBlazor.Components.Search
 @using CarBlazor.Components.Datagrid
+@using CarBlazor.Components.FormModal
 @using CarBlazor.DAL.Models
 @using CarBlazor.Services.Services
+@using CarBlazor.ViewModels
 @inject UserService UserService
+@inject RoleService RoleService
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
 @rendermode InteractiveServer
@@ -15,10 +18,10 @@
 
 <h1>Users</h1>
 
-<Search Placeholder="Search users..." OnSearch="HandleSearch" />
+<Search Placeholder="Search users..." OnSearch="HandleSearch"/>
 
 <p>
-    <a href="/admin/users/create" class="btn btn-primary">Create New</a>
+    <button class="btn btn-primary" @onclick="OpenCreateModal">Create New</button>
 </p>
 
 @if (!string.IsNullOrEmpty(ErrorMessage))
@@ -31,36 +34,112 @@
 }
 else if (Users == null || Users.Count == 0)
 {
-    <p>No customers found</p>
+    <p>No users found</p>
 }
 else
 {
     <Datagrid TItem="User" Items="Users" Columns="_userColumns" OnRowClick="HandleRowClick">
         <RowActions Context="user">
-            <DeleteButton OnClick="@(() => DeleteConfirm(user.Id))" />
+            <DeleteButton OnClick="@(() => DeleteConfirm(user.Id))"/>
         </RowActions>
     </Datagrid>
 }
 
+<FormModal TModel="CreateUserViewModel"
+           Model="NewUser"
+           Title="Create User"
+           SaveButtonText="Create"
+           OnSave="CreateUser"
+           OnCancel="CloseModal"
+           @ref="formModal">
+    <div class="mb-3">
+        <label for="username" class="form-label">Username</label>
+        <InputText id="username" @bind-Value="NewUser.Username" class="form-control"/>
+        <ValidationMessage For="@(() => NewUser.Username)"/>
+    </div>
+
+    <div class="mb-3">
+        <label for="role" class="form-label">Role</label>
+        <InputSelect id="role" @bind-Value="NewUser.RoleId" class="form-select">
+            @if (Roles != null)
+            {
+                @foreach (var role in Roles)
+                {
+                    <option value="@role.Id">@role.Name</option>
+                }
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => NewUser.RoleId)"/>
+    </div>
+</FormModal>
+
 @code {
     private List<User>? Users { get; set; }
+    private List<Role>? Roles { get; set; }
     private bool IsLoading { get; set; } = true;
     private string? ErrorMessage { get; set; }
     private readonly List<DataGridColumn<User>> _userColumns = DatagridColumnDefinitions.UserColumns;
+    private FormModal<CreateUserViewModel>? formModal;
+
+    private CreateUserViewModel NewUser { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             Users = await UserService.GetUsersAsync();
+            Roles = await RoleService.GetRolesAsync(includeAdmin: false);
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Error loading customers: {ex.Message}";
+            ErrorMessage = $"Error loading data: {ex.Message}";
         }
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    private void OpenCreateModal()
+    {
+        NewUser = new CreateUserViewModel
+        {
+            RoleId = Roles?.FirstOrDefault()?.Id ?? "User"
+        };
+        formModal?.Show();
+    }
+
+    private void CloseModal()
+    {
+        formModal?.Hide();
+    }
+
+    private async Task CreateUser(CreateUserViewModel viewModel)
+    {
+        try
+        {
+            // Check if passwords match
+            if (viewModel.Password != viewModel.ConfirmPassword)
+            {
+                ErrorMessage = "Passwords do not match.";
+                return;
+            }
+
+            // Check if username exists
+            var usernameExists = await UserService.UsernameExistsAsync(viewModel.Username);
+            if (usernameExists)
+            {
+                ErrorMessage = "Username already exists.";
+                return;
+            }
+
+            await UserService.CreateUserAsync(viewModel.Username, viewModel.Password, viewModel.RoleId);
+            Users = await UserService.GetUsersAsync();
+            ErrorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error creating user: {ex.Message}";
         }
     }
 
@@ -73,7 +152,7 @@ else
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Error searching customers: {ex.Message}";
+            ErrorMessage = $"Error searching users: {ex.Message}";
         }
         finally
         {
@@ -110,4 +189,5 @@ else
             ErrorMessage = $"Error deleting user: {ex.Message}";
         }
     }
+
 }

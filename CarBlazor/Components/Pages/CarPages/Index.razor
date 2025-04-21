@@ -4,6 +4,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using CarBlazor.Components.Datagrid
 @using CarBlazor.Components.Search
+@using CarBlazor.Components.FormModal
 @using CarBlazor.DAL.Models
 @using CarBlazor.Services.Services
 @inject CarService CarService
@@ -18,7 +19,7 @@
 <Search Placeholder="Search cars..." OnSearch="HandleSearch"/>
 
 <p>
-    <a href="/cars/create" class="btn btn-primary">Create New</a>
+    <button class="btn btn-primary" @onclick="OpenCreateModal">Create New</button>
 </p>
 
 @if (!string.IsNullOrEmpty(ErrorMessage))
@@ -42,11 +43,51 @@ else
     </Datagrid>
 }
 
+<FormModal TModel="Car" 
+           Model="NewCar" 
+           Title="Create Car" 
+           SaveButtonText="Create"
+           OnSave="CreateCar" 
+           OnCancel="CloseModal" 
+           @ref="formModal">
+    <div class="form-group mb-3">
+        <label for="make">Make</label>
+        <InputText id="make" @bind-Value="NewCar.Make" class="form-control" />
+        <ValidationMessage For="@(() => NewCar.Make)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="model">Model</label>
+        <InputText id="model" @bind-Value="NewCar.Model" class="form-control" />
+        <ValidationMessage For="@(() => NewCar.Model)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="year">Year</label>
+        <InputNumber id="year" @bind-Value="NewCar.Year" class="form-control" />
+        <ValidationMessage For="@(() => NewCar.Year)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="color">Color</label>
+        <InputText id="color" @bind-Value="NewCar.Color" class="form-control" />
+        <ValidationMessage For="@(() => NewCar.Color)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="productionDate">Production Date</label>
+        <InputDate id="productionDate" @bind-Value="NewCar.ProductionDate" class="form-control" />
+        <ValidationMessage For="@(() => NewCar.ProductionDate)" />
+    </div>
+</FormModal>
+
 @code {
     private List<Car>? Cars;
+    private Car NewCar { get; set; } = new() { ProductionDate = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc) };
     private bool IsLoading { get; set; } = true;
     private string? ErrorMessage;
     private readonly List<DataGridColumn<Car>> _carColumns = DatagridColumnDefinitions.CarColumns;
+    private FormModal<Car>? formModal;
 
     protected override async Task OnInitializedAsync()
     {
@@ -61,6 +102,35 @@ else
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    private async Task LoadCars()
+    {
+        Cars = await CarService.GetCarsAsync();
+    }
+
+    private void OpenCreateModal()
+    {
+        NewCar = new Car { ProductionDate = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc) };
+        formModal?.Show();
+    }
+
+    private void CloseModal()
+    {
+        formModal?.Hide();
+    }
+
+    private async Task CreateCar(Car car)
+    {
+        try
+        {
+            await CarService.CreateCarAsync(car);
+            await LoadCars();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error creating car: {ex.Message}";
         }
     }
 
