@@ -35,7 +35,7 @@ public static class DatagridColumnDefinitions
         {
             Title = "Production Date",
             ValueGetter = car => car.ProductionDate?.ToShortDateString()
-        }
+        },
     ];
     
     public static readonly List<DataGridColumn<Customer>> CustomerColumns =
@@ -63,6 +63,45 @@ public static class DatagridColumnDefinitions
             Title = "Phone Number",
             ValueGetter = customer => customer.PhoneNumber
         }
+    ];
+    
+    public static readonly List<DataGridColumn<CustomerCar>> CustomerCarColumns =
+    [
+        new()
+        {
+            Title = "Make",
+            ValueGetter = car => car.Car?.Make
+        },
+
+        new()
+        {
+            Title = "Model",
+            ValueGetter = car => car.Car?.Model
+        },
+
+        new()
+        {
+            Title = "Year",
+            ValueGetter = car => car.Car?.Year
+        },
+
+        new()
+        {
+            Title = "Color",
+            ValueGetter = car => car.Car?.Color
+        },
+
+        new()
+        {
+            Title = "Production Date",
+            ValueGetter = car => car.Car?.ProductionDate?.ToShortDateString()
+        },
+        
+        new()
+        {
+            Title = "Is Primary Owner",
+            ValueGetter = car => car.IsPrimaryOwner ? "Yes" : "No"
+        },
     ];
     
     public static readonly List<DataGridColumn<Loan>> LoanColumns =
@@ -132,6 +171,40 @@ public static class DatagridColumnDefinitions
             Title = "Car",
             ValueGetter = warranty => $"{warranty.Car?.Make} {warranty.Car?.Model} ({warranty.Car?.Year})"
         },
+
+        new()
+        {
+            Title = "Warranty Type",
+            ValueGetter = warranty => warranty.WarrantyType?.Name
+        },
+
+        new()
+        {
+            Title = "Provider",
+            ValueGetter = warranty => warranty.Provider
+        },
+        
+        new()
+        {
+            Title = "Start Date",
+            ValueGetter = warranty => warranty.StartDate.ToShortDateString()
+        },
+        
+        new()
+        {
+            Title = "End Date",
+            ValueGetter = warranty => warranty.EndDate.ToShortDateString()
+        },
+        
+        new()
+        {
+            Title = "Cost",
+            ValueGetter = warranty => warranty.Cost.ToString("C")
+        }
+    ];
+    
+    public static readonly List<DataGridColumn<Warranty>> ReducedWarrantyColumns =
+    [
 
         new()
         {

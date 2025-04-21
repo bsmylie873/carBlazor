@@ -3,8 +3,11 @@
 @using CarBlazor.DAL.Models
 @using Microsoft.AspNetCore.Authorization
 @using CarBlazor.Services.Services
+@using CarBlazor.Components.Datagrid
+@using CarBlazor.Components.Constants
 @inject CustomerService CustomerService
 @inject NavigationManager Navigation
+@inject IJSRuntime JsRuntime
 @rendermode InteractiveServer
 
 <PageTitle>Customer Details</PageTitle>
@@ -37,57 +40,39 @@
             <dt class="col-sm-2">Address</dt>
             <dd class="col-sm-10">@Customer.Address</dd>
         </dl>
-
-        <h4>Customer Cars</h4>
-        <hr/>
-
-        <table class="table">
-            <thead>
-            <tr>
-                <th>Make</th>
-                <th>Model</th>
-                <th>Year</th>
-                <th>Purchase Date</th>
-                <th>Primary Owner</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            @if (CustomerCars != null && CustomerCars.Any())
-            {
-                @foreach (var customerCar in CustomerCars)
-                {
-                    <tr>
-                        <td>@customerCar.Car?.Make</td>
-                        <td>@customerCar.Car?.Model</td>
-                        <td>@customerCar.Car?.Year</td>
-                        <td>@customerCar.PurchaseDate.ToShortDateString()</td>
-                        <td>@(customerCar.IsPrimaryOwner ? "Yes" : "No")</td>
-                        <td>
-                            <a href="@($"cars/details/{customerCar.CarId}")" class="btn btn-sm btn-info">View Car</a>
-                        </td>
-                    </tr>
-                }
-            }
-            else if (IsLoading)
-            {
-                <tr>
-                    <td colspan="6">Loading cars...</td>
-                </tr>
-            }
-            else
-            {
-                <tr>
-                    <td colspan="6">No cars associated with this customer</td>
-                </tr>
-            }
-            </tbody>
-        </table>
-
-        <div>
-            <a class="btn btn-primary" href="@($"customers/edit/{Customer.Id}")">Edit</a> |
+        
+        <div class="mt-3">
+            <a class="btn btn-primary" href="@($"customers/edit/{Customer.Id}")">Edit</a>
             <button class="btn btn-secondary" @onclick="GoBack">Back to List</button>
         </div>
+        
+        <hr/>
+
+        <h4>
+            Customer Cars
+            @if (CustomerCars != null)
+            {
+                <span class="badge bg-primary">@CustomerCars.Count</span>
+            }
+        </h4>
+
+        @if (CustomerCars != null && CustomerCars.Any())
+        {
+            <Datagrid TItem="CustomerCar" Items="CustomerCars" Columns="_customerCarColumns"
+                      OnRowClick="HandleCarRowClick">
+                <RowActions Context="customerCar">
+                    <DeleteButton OnClick="@(() => DeleteConfirm(customerCar.Id))"/>
+                </RowActions>
+            </Datagrid>
+        }
+        else if (IsLoading)
+        {
+            <p>Loading cars...</p>
+        }
+        else
+        {
+            <p>No cars associated with this customer</p>
+        }
     }
     else if (IsLoading)
     {
@@ -109,6 +94,8 @@
     private bool IsLoading { get; set; } = true;
     private string? ErrorMessage { get; set; }
 
+    private readonly List<DataGridColumn<CustomerCar>> _customerCarColumns = DatagridColumnDefinitions.CustomerCarColumns;
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -120,7 +107,7 @@
                 ErrorMessage = $"Customer with ID {Id} not found.";
                 return;
             }
-            
+
             CustomerCars = await CustomerService.GetCustomerCarsAsync(Id);
         }
         catch (Exception ex)
@@ -136,5 +123,35 @@
     private void GoBack()
     {
         Navigation.NavigateTo("customers");
+    }
+
+    private void HandleCarRowClick(CustomerCar customerCar)
+    {
+        Navigation.NavigateTo($"cars/details/{customerCar.CarId}");
+    }
+
+    private async Task DeleteConfirm(int id)
+    {
+        try
+        {
+            var confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to remove this car from the customer?");
+            if (confirmed)
+            {
+                var success = await CustomerService.RemoveCarFromCustomerAsync(id);
+                if (success)
+                {
+                    CustomerCars = await CustomerService.GetCustomerCarsAsync(id);
+                    ErrorMessage = null;
+                }
+                else
+                {
+                    ErrorMessage = "Failed to remove car from customer. It may no longer exist.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error deleting car: {ex.Message}";
+        }
     }
 }

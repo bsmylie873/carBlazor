@@ -3,9 +3,13 @@
 @using CarBlazor.DAL.Models
 @using Microsoft.AspNetCore.Authorization
 @using CarBlazor.Services.Services
+@using CarBlazor.Components.Datagrid
+@using CarBlazor.Components.Constants
+@using CarBlazor.Components.FormModal
 @inject CustomerService CustomerService
 @inject CarService CarService
 @inject NavigationManager Navigation
+@inject IJSRuntime JsRuntime
 @rendermode InteractiveServer
 
 <PageTitle>Edit Customer</PageTitle>
@@ -18,45 +22,45 @@
 }
 
 <h4>Customer</h4>
-<hr />
+<hr/>
 <div class="row">
     <div class="col-md-4">
         @if (Customer != null)
         {
             <EditForm Model="@Customer" OnValidSubmit="UpdateCustomer">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
+                <DataAnnotationsValidator/>
+                <ValidationSummary/>
 
-                <input type="hidden" @bind-value="Customer.Id" />
+                <input type="hidden" @bind-value="Customer.Id"/>
 
                 <div class="form-group mb-3">
                     <label for="first_name">First Name</label>
-                    <InputText id="first_name" @bind-Value="Customer.FirstName" class="form-control" />
-                    <ValidationMessage For="@(() => Customer.FirstName)" />
+                    <InputText id="first_name" @bind-Value="Customer.FirstName" class="form-control"/>
+                    <ValidationMessage For="@(() => Customer.FirstName)"/>
                 </div>
 
                 <div class="form-group mb-3">
                     <label for="last_name">Last Name</label>
-                    <InputText id="last_name" @bind-Value="Customer.LastName" class="form-control" />
-                    <ValidationMessage For="@(() => Customer.LastName)" />
+                    <InputText id="last_name" @bind-Value="Customer.LastName" class="form-control"/>
+                    <ValidationMessage For="@(() => Customer.LastName)"/>
                 </div>
 
                 <div class="form-group mb-3">
                     <label for="email">Email</label>
-                    <InputText id="email" @bind-Value="Customer.Email" class="form-control" />
-                    <ValidationMessage For="@(() => Customer.Email)" />
+                    <InputText id="email" @bind-Value="Customer.Email" class="form-control"/>
+                    <ValidationMessage For="@(() => Customer.Email)"/>
                 </div>
 
                 <div class="form-group mb-3">
                     <label for="phone_number">Phone Number</label>
-                    <InputText id="phone_number" @bind-Value="Customer.PhoneNumber" class="form-control" />
-                    <ValidationMessage For="@(() => Customer.PhoneNumber)" />
+                    <InputText id="phone_number" @bind-Value="Customer.PhoneNumber" class="form-control"/>
+                    <ValidationMessage For="@(() => Customer.PhoneNumber)"/>
                 </div>
 
                 <div class="form-group mb-3">
                     <label for="address">Address</label>
-                    <InputText id="address" @bind-Value="Customer.Address" class="form-control" />
-                    <ValidationMessage For="@(() => Customer.Address)" />
+                    <InputText id="address" @bind-Value="Customer.Address" class="form-control"/>
+                    <ValidationMessage For="@(() => Customer.Address)"/>
                 </div>
 
                 <div class="form-group mb-3">
@@ -71,111 +75,94 @@
         }
         else
         {
-            <p>Customer not found. <button class="btn btn-secondary" @onclick="GoBack">Back to List</button></p>
+            <p>Customer not found.
+                <button class="btn btn-secondary" @onclick="GoBack">Back to List</button>
+            </p>
         }
     </div>
 </div>
 
-<h4>Customer Cars</h4>
-<hr />
+<div class="row mt-4">
+    <div class="col-12">
+        <h4>
+            Customer Cars
+            @if (CustomerCars != null)
+            {
+                <span class="badge bg-primary">@CustomerCars.Count</span>
+            }
+        </h4>
+        <hr/>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Make</th>
-            <th>Model</th>
-            <th>Year</th>
-            <th>Purchase Date</th>
-            <th>Primary Owner</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
         @if (CustomerCars != null && CustomerCars.Any())
         {
-            @foreach (var customerCar in CustomerCars)
-            {
-                <tr>
-                    <td>@customerCar.Car?.Make</td>
-                    <td>@customerCar.Car?.Model</td>
-                    <td>@customerCar.Car?.Year</td>
-                    <td>@customerCar.PurchaseDate.ToShortDateString()</td>
-                    <td>@(customerCar.IsPrimaryOwner ? "Yes" : "No")</td>
-                    <td>
-                        <button class="btn btn-sm btn-danger" @onclick="() => RemoveCarFromCustomer(customerCar)">Remove</button>
-                    </td>
-                </tr>
-            }
+            <Datagrid TItem="CustomerCar" Items="CustomerCars" Columns="_customerCarColumns"
+                      OnRowClick="HandleCarRowClick">
+                <RowActions Context="customerCar">
+                    <DeleteButton OnClick="@(() => RemoveCarFromCustomer(customerCar))"/>
+                </RowActions>
+            </Datagrid>
         }
         else if (IsLoading)
         {
-            <tr>
-                <td colspan="6">Loading cars...</td>
-            </tr>
+            <p>Loading cars...</p>
         }
         else
         {
-            <tr>
-                <td colspan="6">No cars associated with this customer</td>
-            </tr>
+            <p>No cars associated with this customer</p>
         }
-    </tbody>
-</table>
 
-<h4>Add Car to Customer</h4>
-<div class="row">
-    <div class="col-md-6">
-        <EditForm Model="@newCustomerCar" OnValidSubmit="AddCarToCustomer">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
-
-            <div class="form-group mb-3">
-                <label for="car">Select Car</label>
-                <InputSelect id="car" @bind-Value="newCustomerCar.CarId" class="form-control">
-                    <option value="0">-- Select a Car --</option>
-                    @if (AvailableCars != null)
-                    {
-                        @foreach (var car in AvailableCars)
-                        {
-                            <option value="@car.Id">@car.Make @car.Model (@car.Year)</option>
-                        }
-                    }
-                </InputSelect>
-            </div>
-
-            <div class="form-group mb-3">
-                <label for="purchaseDate">Purchase Date</label>
-                <InputDate id="purchaseDate" @bind-Value="newCustomerCar.PurchaseDate" class="form-control" />
-            </div>
-
-            <div class="form-group mb-3">
-                <label for="isPrimaryOwner" class="form-check-label">
-                    <InputCheckbox id="isPrimaryOwner" @bind-Value="newCustomerCar.IsPrimaryOwner" class="form-check-input" />
-                    Primary Owner
-                </label>
-            </div>
-
-            <div class="form-group mb-3">
-                <button type="submit" class="btn btn-primary" disabled="@(newCustomerCar.CarId == 0)">Add Car</button>
-            </div>
-        </EditForm>
+        <div class="mb-3">
+            <button @onclick="OpenAddCarModal" class="btn btn-success">Add Car</button>
+        </div>
     </div>
 </div>
 
+<FormModal TModel="CustomerCar"
+           Model="NewCustomerCar"
+           Title="Add Car to Customer"
+           SaveButtonText="Add Car"
+           OnSave="AddCarToCustomer"
+           OnCancel="CloseModal"
+           @ref="formModal">
+    <div class="form-group mb-3">
+        <label for="car">Select Car</label>
+        <InputSelect id="car" @bind-Value="NewCustomerCar.CarId" class="form-control">
+            <option value="0">-- Select a Car --</option>
+            @if (AvailableCars != null)
+            {
+                @foreach (var car in AvailableCars)
+                {
+                    <option value="@car.Id">@car.Make @car.Model (@car.Year)</option>
+                }
+            }
+        </InputSelect>
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="purchaseDate">Purchase Date</label>
+        <InputDate id="purchaseDate" @bind-Value="NewCustomerCar.PurchaseDate" class="form-control"/>
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="isPrimaryOwner" class="form-check-label">
+            <InputCheckbox id="isPrimaryOwner" @bind-Value="NewCustomerCar.IsPrimaryOwner" class="form-check-input"/>
+            Primary Owner
+        </label>
+    </div>
+</FormModal>
+
 @code {
-    [Parameter]
-    public int Id { get; set; }
+    [Parameter] public int Id { get; set; }
 
     private Customer? Customer { get; set; }
     private List<CustomerCar>? CustomerCars { get; set; }
     private List<Car>? AvailableCars { get; set; }
     private bool IsLoading { get; set; } = true;
     private string? ErrorMessage { get; set; }
-    private CustomerCar newCustomerCar = new CustomerCar
-    {
-        PurchaseDate = DateTime.Today,
-        IsPrimaryOwner = false
-    };
+    private CustomerCar NewCustomerCar { get; set; } = new();
+    private FormModal<CustomerCar>? formModal;
+
+    private readonly List<DataGridColumn<CustomerCar>> _customerCarColumns = DatagridColumnDefinitions.CustomerCarColumns;
 
     protected override async Task OnInitializedAsync()
     {
@@ -239,22 +226,32 @@
         }
     }
 
+    private void OpenAddCarModal()
+    {
+        NewCustomerCar = new CustomerCar
+        {
+            CustomerId = Id,
+            PurchaseDate = DateTime.Today,
+            IsPrimaryOwner = false
+        };
+        formModal?.Show();
+    }
+
+    private void CloseModal()
+    {
+        formModal?.Hide();
+    }
+
     private async Task AddCarToCustomer()
     {
         try
         {
-            if (newCustomerCar.CarId == 0) return;
+            if (NewCustomerCar.CarId == 0) return;
 
-            newCustomerCar.CustomerId = Id;
-            await CustomerService.AddCarToCustomerAsync(newCustomerCar);
-            
-            newCustomerCar = new CustomerCar
-            {
-                PurchaseDate = DateTime.Today,
-                IsPrimaryOwner = false
-            };
-
+            NewCustomerCar.CustomerId = Id;
+            await CustomerService.AddCarToCustomerAsync(NewCustomerCar);
             await LoadCustomerCarsAndAvailableCars();
+            CloseModal();
         }
         catch (Exception ex)
         {
@@ -266,17 +263,29 @@
     {
         try
         {
-            await CustomerService.RemoveCarFromCustomerAsync(customerCar.Id);
-            await LoadCustomerCarsAndAvailableCars();
+            var confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to remove this car from the customer?");
+            if (confirmed)
+            {
+                await CustomerService.RemoveCarFromCustomerAsync(customerCar.Id);
+                await LoadCustomerCarsAndAvailableCars();
+                StateHasChanged();
+            }
         }
         catch (Exception ex)
         {
             ErrorMessage = $"Error removing car from customer: {ex.Message}";
+            StateHasChanged();
         }
+    }
+
+    private void HandleCarRowClick(CustomerCar customerCar)
+    {
+        Navigation.NavigateTo($"cars/details/{customerCar.CarId}");
     }
 
     private void GoBack()
     {
         Navigation.NavigateTo("customers");
     }
+
 }
