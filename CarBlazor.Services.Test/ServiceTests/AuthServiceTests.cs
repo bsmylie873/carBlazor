@@ -1,11 +1,13 @@
 using CarBlazor.DAL.Data;
 using CarBlazor.DAL.Models;
+using CarBlazor.DAL.Utilities;
 using CarBlazor.Services.Services;
-using CarBlazorTest.ServiceTests.Utilities;
+using CarBlazor.Services.Test.ServiceTests.Utilities;
 using Microsoft.EntityFrameworkCore;
-using static CarBlazor.DAL.Utilities.Authentication;
+using Xunit;
+using Assert = Xunit.Assert;
 
-namespace CarBlazorTest.ServiceTests;
+namespace CarBlazor.Services.Test.ServiceTests;
 
 public class AuthServiceTests : IDisposable
 {
@@ -33,7 +35,7 @@ public class AuthServiceTests : IDisposable
         var role = new Role { Id = "admin", Name = "Administrator" };
         _context.Roles.Add(role);
 
-        var (hash, salt) = HashPassword("password123");
+        var (hash, salt) = Authentication.HashPassword("password123");
         var user = new User
         {
             Id = 1,
@@ -132,7 +134,7 @@ public class AuthServiceTests : IDisposable
 
         // Verify the password was actually changed
         var user = await _context.Users.FindAsync(1);
-        Assert.True(VerifyPassword("newpassword123", user!.PasswordHash, user.Salt));
+        Assert.True(Authentication.VerifyPassword("newpassword123", user!.PasswordHash, user.Salt));
     }
 
     [Fact]

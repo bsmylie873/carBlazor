@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 
-namespace CarBlazorTest.ServiceTests.Utilities;
+namespace CarBlazor.Services.Test.ServiceTests.Utilities;
 
 public class TestHttpContextAccessor : IHttpContextAccessor
 {
@@ -12,7 +12,6 @@ public class TestHttpContextAccessor : IHttpContextAccessor
 
     public TestHttpContextAccessor()
     {
-        // Set up the authentication service
         HttpContext.RequestServices = new TestServiceProvider(this);
     }
 

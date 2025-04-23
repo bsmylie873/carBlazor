@@ -2,8 +2,10 @@ using CarBlazor.DAL.Data;
 using CarBlazor.DAL.Models;
 using CarBlazor.Services.Services;
 using Microsoft.EntityFrameworkCore;
+using Xunit;
+using Assert = Xunit.Assert;
 
-namespace CarBlazorTest.ServiceTests;
+namespace CarBlazor.Services.Test.ServiceTests;
 
 public class WarrantyServiceTests : IDisposable
 {
