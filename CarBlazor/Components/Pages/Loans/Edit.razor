@@ -2,10 +2,7 @@
 @attribute [Authorize(Roles = "Admin,Manager")]
 @using CarBlazor.DAL.Models
 @using Microsoft.AspNetCore.Authorization
-@using CarBlazor.Services.Services
-@inject CarService CarService
-@inject CustomerService CustomerService
-@inject LoanService LoanService
+@inject HttpClient Http
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -19,16 +16,16 @@
 }
 
 <h4>Loan</h4>
-<hr />
+<hr/>
 <div class="row">
     <div class="col-md-4">
         @if (Loan != null)
         {
             <EditForm Model="@Loan" OnValidSubmit="UpdateLoan">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
+                <DataAnnotationsValidator/>
+                <ValidationSummary/>
 
-                <input type="hidden" @bind-value="Loan.Id" />
+                <input type="hidden" @bind-value="Loan.Id"/>
 
                 <div class="form-group mb-3">
                     <label for="carId">Car</label>
@@ -41,44 +38,44 @@
                             }
                         }
                     </InputSelect>
-                    <ValidationMessage For="@(() => Loan.CarId)" />
+                    <ValidationMessage For="@(() => Loan.CarId)"/>
                 </div>
 
                 <div class="form-group mb-3">
                     <label for="amount">Amount</label>
-                    <InputNumber id="amount" @bind-Value="Loan.Amount" class="form-control" />
-                    <ValidationMessage For="@(() => Loan.Amount)" />
+                    <InputNumber id="amount" @bind-Value="Loan.Amount" class="form-control"/>
+                    <ValidationMessage For="@(() => Loan.Amount)"/>
                 </div>
 
                 <div class="form-group mb-3">
                     <label for="interestRate">Interest Rate</label>
-                    <InputNumber id="interestRate" @bind-Value="Loan.InterestRate" class="form-control" />
+                    <InputNumber id="interestRate" @bind-Value="Loan.InterestRate" class="form-control"/>
                     <small class="form-text text-muted">Enter as decimal (e.g., 0.05 for 5%)</small>
-                    <ValidationMessage For="@(() => Loan.InterestRate)" />
+                    <ValidationMessage For="@(() => Loan.InterestRate)"/>
                 </div>
 
                 <div class="form-group mb-3">
                     <label for="startDate">Start Date</label>
-                    <InputDate id="startDate" @bind-Value="Loan.StartDate" class="form-control" />
-                    <ValidationMessage For="@(() => Loan.StartDate)" />
+                    <InputDate id="startDate" @bind-Value="Loan.StartDate" class="form-control"/>
+                    <ValidationMessage For="@(() => Loan.StartDate)"/>
                 </div>
 
                 <div class="form-group mb-3">
                     <label for="endDate">End Date</label>
-                    <InputDate id="endDate" @bind-Value="Loan.EndDate" class="form-control" />
-                    <ValidationMessage For="@(() => Loan.EndDate)" />
+                    <InputDate id="endDate" @bind-Value="Loan.EndDate" class="form-control"/>
+                    <ValidationMessage For="@(() => Loan.EndDate)"/>
                 </div>
 
                 <div class="form-group mb-3">
                     <label for="monthlyPayment">Monthly Payment</label>
-                    <InputNumber id="monthlyPayment" @bind-Value="Loan.MonthlyPayment" class="form-control" />
-                    <ValidationMessage For="@(() => Loan.MonthlyPayment)" />
+                    <InputNumber id="monthlyPayment" @bind-Value="Loan.MonthlyPayment" class="form-control"/>
+                    <ValidationMessage For="@(() => Loan.MonthlyPayment)"/>
                 </div>
 
                 <div class="form-group mb-3">
                     <label for="remainingBalance">Remaining Balance</label>
-                    <InputNumber id="remainingBalance" @bind-Value="Loan.RemainingBalance" class="form-control" />
-                    <ValidationMessage For="@(() => Loan.RemainingBalance)" />
+                    <InputNumber id="remainingBalance" @bind-Value="Loan.RemainingBalance" class="form-control"/>
+                    <ValidationMessage For="@(() => Loan.RemainingBalance)"/>
                 </div>
 
                 <div class="form-group mb-3">
@@ -92,7 +89,7 @@
                             }
                         }
                     </InputSelect>
-                    <ValidationMessage For="@(() => Loan.StatusId)" />
+                    <ValidationMessage For="@(() => Loan.StatusId)"/>
                 </div>
 
                 <div class="form-group mb-3">
@@ -107,7 +104,7 @@
                             }
                         }
                     </InputSelect>
-                    <ValidationMessage For="@(() => Loan.CustomerId)" />
+                    <ValidationMessage For="@(() => Loan.CustomerId)"/>
                 </div>
 
                 <div class="form-group mb-3">
@@ -122,14 +119,15 @@
         }
         else
         {
-            <p>Loan not found. <button class="btn btn-secondary" @onclick="GoBack">Back to List</button></p>
+            <p>Loan not found.
+                <button class="btn btn-secondary" @onclick="GoBack">Back to List</button>
+            </p>
         }
     </div>
 </div>
 
 @code {
-    [Parameter]
-    public int Id { get; set; }
+    [Parameter] public int Id { get; set; }
 
     private Loan? Loan { get; set; }
     private List<Car>? Cars { get; set; }
@@ -143,7 +141,7 @@
     {
         try
         {
-            Loan = await LoanService.GetLoanByIdAsync(Id);
+            Loan = await Http.GetFromJsonAsync<Loan>($"api/loans/{Id}");
 
             if (Loan == null)
             {
@@ -152,10 +150,10 @@
             }
 
             OriginalCarId = Loan.CarId;
-            
-            Cars = await CarService.GetCarsAsync();
-            Customers = await CustomerService.GetCustomersAsync();
-            LoanStatuses = await LoanService.GetLoanStatusesAsync();
+
+            Cars = await Http.GetFromJsonAsync<List<Car>>("api/cars");
+            Customers = await Http.GetFromJsonAsync<List<Customer>>("api/customers");
+            LoanStatuses = await Http.GetFromJsonAsync<List<LoanStatus>>("api/loans/statuses");
         }
         catch (Exception ex)
         {
@@ -173,9 +171,9 @@
         {
             if (Loan == null) return;
 
-            var updatedLoan = await LoanService.UpdateLoanAsync(Loan);
+            var response = await Http.PutAsJsonAsync($"api/loans/{Loan.Id}", Loan);
 
-            if (updatedLoan != null)
+            if (response.IsSuccessStatusCode)
             {
                 Navigation.NavigateTo(OriginalCarId.HasValue ? $"cars/details/{OriginalCarId.Value}" : "loans");
             }
@@ -194,4 +192,5 @@
     {
         Navigation.NavigateTo(OriginalCarId.HasValue ? $"cars/details/{OriginalCarId.Value}" : "loans");
     }
+
 }

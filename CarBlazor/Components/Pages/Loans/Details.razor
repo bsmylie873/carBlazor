@@ -2,8 +2,7 @@
 @attribute [Authorize(Roles = "Admin,Manager")]
 @using CarBlazor.DAL.Models
 @using Microsoft.AspNetCore.Authorization
-@using CarBlazor.Services.Services
-@inject LoanService LoanService
+@inject HttpClient Http
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -82,7 +81,7 @@
     {
         try
         {
-            Loan = await LoanService.GetLoanByIdAsync(Id);
+            Loan = await Http.GetFromJsonAsync<Loan>($"api/loans/{Id}");
 
             if (Loan == null)
             {
@@ -103,4 +102,5 @@
     {
         Navigation.NavigateTo("loans");
     }
+
 }

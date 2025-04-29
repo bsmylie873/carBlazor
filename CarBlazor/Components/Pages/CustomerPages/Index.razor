@@ -6,8 +6,7 @@
 @using CarBlazor.Components.Search
 @using CarBlazor.Components.FormModal
 @using CarBlazor.DAL.Models
-@using CarBlazor.Services.Services
-@inject CustomerService CustomerService
+@inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
 @rendermode InteractiveServer
@@ -38,7 +37,7 @@ else
 {
     <Datagrid TItem="Customer" Items="Customers" Columns="_customerColumns" OnRowClick="HandleRowClick">
         <RowActions Context="customer">
-            <DeleteButton OnClick="@(() => DeleteConfirm(customer.Id))" />
+            <DeleteButton OnClick="@(() => DeleteConfirm(customer.Id))"/>
         </RowActions>
     </Datagrid>
 }
@@ -50,35 +49,6 @@ else
            OnSave="CreateCustomer"
            OnCancel="CloseModal"
            @ref="formModal">
-    <div class="form-group mb-3">
-        <label for="firstName">First Name</label>
-        <InputText id="firstName" @bind-Value="NewCustomer.FirstName" class="form-control" />
-        <ValidationMessage For="@(() => NewCustomer.FirstName)" />
-    </div>
-
-    <div class="form-group mb-3">
-        <label for="lastName">Last Name</label>
-        <InputText id="lastName" @bind-Value="NewCustomer.LastName" class="form-control" />
-        <ValidationMessage For="@(() => NewCustomer.LastName)" />
-    </div>
-
-    <div class="form-group mb-3">
-        <label for="email">Email</label>
-        <InputText id="email" @bind-Value="NewCustomer.Email" class="form-control" />
-        <ValidationMessage For="@(() => NewCustomer.Email)" />
-    </div>
-
-    <div class="form-group mb-3">
-        <label for="phone">Phone</label>
-        <InputText id="phone" @bind-Value="NewCustomer.PhoneNumber" class="form-control" />
-        <ValidationMessage For="@(() => NewCustomer.PhoneNumber)" />
-    </div>
-
-    <div class="form-group mb-3">
-        <label for="address">Address</label>
-        <InputText id="address" @bind-Value="NewCustomer.Address" class="form-control" />
-        <ValidationMessage For="@(() => NewCustomer.Address)" />
-    </div>
 </FormModal>
 
 @code {
@@ -93,7 +63,7 @@ else
     {
         try
         {
-            Customers = await CustomerService.GetCustomersAsync();
+            Customers = await  Http.GetFromJsonAsync<List<Customer>>("api/customers");
         }
         catch (Exception ex)
         {
@@ -103,6 +73,11 @@ else
         {
             IsLoading = false;
         }
+    }
+    
+    private async Task LoadCustomers()
+    {
+        Customers = await Http.GetFromJsonAsync<List<Customer>>("api/customers");
     }
 
     private void OpenCreateModal()
@@ -120,8 +95,9 @@ else
     {
         try
         {
-            await CustomerService.CreateCustomerAsync(customer);
-            Customers = await CustomerService.GetCustomersAsync();
+            var response = await Http.PostAsJsonAsync("api/customers", customer);
+            response.EnsureSuccessStatusCode();
+            await LoadCustomers();
         }
         catch (Exception ex)
         {
@@ -134,7 +110,7 @@ else
         try
         {
             IsLoading = true;
-            Customers = await CustomerService.SearchCustomersAsync(searchTerm);
+            Customers = await Http.GetFromJsonAsync<List<Customer>>($"api/customers/search?searchTerm={Uri.EscapeDataString(searchTerm)}");
         }
         catch (Exception ex)
         {
@@ -159,10 +135,11 @@ else
 
             if (confirmed)
             {
-                var success = await CustomerService.DeleteCustomerAsync(id);
-                if (success)
+                var response = await Http.DeleteAsync($"api/customers/{id}");
+                if (response.IsSuccessStatusCode)
                 {
-                    Customers = await CustomerService.GetCustomersAsync();
+                    await LoadCustomers();
+                    ErrorMessage = null;
                 }
                 else
                 {
@@ -175,4 +152,5 @@ else
             ErrorMessage = $"Error deleting customer: {ex.Message}";
         }
     }
+
 }

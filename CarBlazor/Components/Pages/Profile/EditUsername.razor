@@ -1,12 +1,10 @@
 @page "/account/edit-profile"
-@using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @using CarBlazor.DAL.Models
-@using CarBlazor.Services.Services
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject UserService UserService
+@inject HttpClient Http
 @inject NavigationManager Navigation
 @attribute [Authorize]
 @rendermode InteractiveServer
@@ -31,14 +29,14 @@
                 <h3>Update Your Information</h3>
             </div>
             <div class="card-body">
-                <EditForm Model="@_model" OnValidSubmit="UpdateProfile" FormName="editProfileForm">
+                <EditForm Model="@_username" OnValidSubmit="UpdateProfile" FormName="editProfileForm">
                     <DataAnnotationsValidator/>
                     <ValidationSummary class="text-danger"/>
 
                     <div class="mb-3">
                         <label for="username" class="form-label">Username</label>
-                        <InputText id="username" @bind-Value="_model.Username" class="form-control"/>
-                        <ValidationMessage For="@(() => _model.Username)"/>
+                        <InputText id="username" @bind-Value="_username" class="form-control"/>
+                        <ValidationMessage For="@(() => _username)"/>
                     </div>
 
                     <div class="d-flex gap-2">
@@ -62,7 +60,7 @@
 
 @code {
     private User? _user;
-    private EditProfileModel _model = new();
+    private string _username;
     private string? _errorMessage;
     private string? _successMessage;
 
@@ -75,11 +73,11 @@
 
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
             {
-                _user = await UserService.GetUserByIdAsync(userId);
+                _user = await Http.GetFromJsonAsync<User>($"api/users/{userId}");
 
                 if (_user != null)
                 {
-                    _model.Username = _user.Username;
+                    _username = _user.Username;
                 }
             }
         }
@@ -95,9 +93,11 @@
 
         try
         {
-            if (_user.Username != _model.Username)
+            if (_user.Username != _username)
             {
-                var usernameExists = await UserService.UsernameExistsAsync(_model.Username);
+                // First check if username exists
+                var checkResponse = await Http.GetAsync($"api/users/check-username?username={Uri.EscapeDataString(_username)}");
+                var usernameExists = await checkResponse.Content.ReadFromJsonAsync<bool>();
 
                 if (usernameExists)
                 {
@@ -105,11 +105,11 @@
                     return;
                 }
 
-                _user.Username = _model.Username;
+                // Update user with new username
+                _user.Username = _username;
+                var response = await Http.PutAsJsonAsync($"api/users/{_user.Id}", _user);
 
-                var updatedUser = await UserService.UpdateUserAsync(_user);
-
-                if (updatedUser != null)
+                if (response.IsSuccessStatusCode)
                 {
                     _successMessage = "Profile updated successfully.";
                     _errorMessage = null;
@@ -136,12 +136,4 @@
             _successMessage = null;
         }
     }
-
-    public class EditProfileModel
-    {
-        [Required(ErrorMessage = "Username is required")]
-        [StringLength(50, MinimumLength = 3, ErrorMessage = "Username must be between 3 and 50 characters")]
-        public string Username { get; set; } = string.Empty;
-    }
-
 }

@@ -6,10 +6,7 @@
 @using CarBlazor.Components.Datagrid
 @using CarBlazor.Components.FormModal
 @using CarBlazor.DAL.Models
-@using CarBlazor.Services.Services
-@inject LoanService LoanService
-@inject CarService CarService
-@inject CustomerService CustomerService
+@inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
 @rendermode InteractiveServer
@@ -153,10 +150,10 @@ else
     {
         try
         {
-            Loans = await LoanService.GetLoansAsync();
-            Cars = await CarService.GetCarsAsync();
-            Customers = await CustomerService.GetCustomersAsync();
-            LoanStatuses = await LoanService.GetLoanStatusesAsync();
+            Loans = await Http.GetFromJsonAsync<List<Loan>>("api/loans");
+            Cars = await Http.GetFromJsonAsync<List<Car>>("api/cars");
+            Customers = await Http.GetFromJsonAsync<List<Customer>>("api/customers");
+            LoanStatuses = await Http.GetFromJsonAsync<List<LoanStatus>>("api/loans/statuses");
         }
         catch (Exception ex)
         {
@@ -175,7 +172,7 @@ else
             StartDate = DateTime.Today,
             EndDate = DateTime.Today.AddYears(5)
         };
-        
+
         if (LoanStatuses?.Any() == true)
             NewLoan.StatusId = LoanStatuses.First().Id;
 
@@ -191,8 +188,17 @@ else
     {
         try
         {
-            await LoanService.CreateLoanAsync(loan);
-            Loans = await LoanService.GetLoansAsync();
+            var response = await Http.PostAsJsonAsync("api/loans", loan);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Loans = await Http.GetFromJsonAsync<List<Loan>>("api/loans");
+                CloseModal();
+            }
+            else
+            {
+                ErrorMessage = "Failed to create loan.";
+            }
         }
         catch (Exception ex)
         {
@@ -204,7 +210,7 @@ else
     {
         try
         {
-            Loans = await LoanService.SearchLoansAsync(searchTerm);
+            Loans = await Http.GetFromJsonAsync<List<Loan>>($"api/loans/search?term={searchTerm}");
         }
         catch (Exception ex)
         {
@@ -225,10 +231,11 @@ else
 
             if (confirmed)
             {
-                var success = await LoanService.DeleteLoanAsync(id);
-                if (success)
+                var response = await Http.DeleteAsync($"api/loans/{id}");
+                
+                if (response.IsSuccessStatusCode)
                 {
-                    Loans = await LoanService.GetLoansAsync();
+                    Loans = await Http.GetFromJsonAsync<List<Loan>>("api/loans");
                     ErrorMessage = null;
                 }
                 else

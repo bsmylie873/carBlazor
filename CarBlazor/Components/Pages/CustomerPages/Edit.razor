@@ -2,12 +2,10 @@
 @attribute [Authorize(Roles = "Admin,Manager")]
 @using CarBlazor.DAL.Models
 @using Microsoft.AspNetCore.Authorization
-@using CarBlazor.Services.Services
 @using CarBlazor.Components.Datagrid
 @using CarBlazor.Components.Constants
 @using CarBlazor.Components.FormModal
-@inject CustomerService CustomerService
-@inject CarService CarService
+@inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
 @rendermode InteractiveServer
@@ -168,7 +166,7 @@
     {
         try
         {
-            Customer = await CustomerService.GetCustomerByIdAsync(Id);
+            Customer = await Http.GetFromJsonAsync<Customer>($"api/customer/{Id}");
 
             if (Customer == null)
             {
@@ -194,9 +192,9 @@
         {
             if (Customer == null) return;
 
-            var updatedCustomer = await CustomerService.UpdateCustomerAsync(Customer);
+            var response = await Http.PutAsJsonAsync($"api/customer/{Id}", Customer);
 
-            if (updatedCustomer != null)
+            if (response.IsSuccessStatusCode)
             {
                 Navigation.NavigateTo($"customers/details/{Id}");
             }
@@ -215,10 +213,10 @@
     {
         try
         {
-            CustomerCars = await CustomerService.GetCustomerCarsAsync(Id);
-
-            var customerCarIds = CustomerCars.Select(cc => cc.CarId).ToList();
-            AvailableCars = await CarService.GetCarsNotAssociatedWithCustomerAsync(customerCarIds);
+            CustomerCars = await Http.GetFromJsonAsync<List<CustomerCar>>($"api/customer/{Id}/cars");
+            var allCars = await Http.GetFromJsonAsync<List<Car>>("api/car");
+            var customerCarIds = CustomerCars?.Select(cc => cc.CarId).ToHashSet() ?? [];
+            AvailableCars = allCars?.Where(car => !customerCarIds.Contains(car.Id)).ToList();
         }
         catch (Exception ex)
         {
@@ -249,9 +247,17 @@
             if (NewCustomerCar.CarId == 0) return;
 
             NewCustomerCar.CustomerId = Id;
-            await CustomerService.AddCarToCustomerAsync(NewCustomerCar);
-            await LoadCustomerCarsAndAvailableCars();
-            CloseModal();
+            var response = await Http.PostAsJsonAsync($"api/customer/{Id}/cars", NewCustomerCar);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadCustomerCarsAndAvailableCars();
+                CloseModal();
+            }
+            else
+            {
+                ErrorMessage = "Failed to add car to customer.";
+            }
         }
         catch (Exception ex)
         {
@@ -266,9 +272,18 @@
             var confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to remove this car from the customer?");
             if (confirmed)
             {
-                await CustomerService.RemoveCarFromCustomerAsync(customerCar.Id);
-                await LoadCustomerCarsAndAvailableCars();
-                StateHasChanged();
+                var response = await Http.DeleteAsync($"api/customer/cars/{customerCar.Id}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    await LoadCustomerCarsAndAvailableCars();
+                    StateHasChanged();
+                }
+                else
+                {
+                    ErrorMessage = "Failed to remove car from customer.";
+                    StateHasChanged();
+                }
             }
         }
         catch (Exception ex)

@@ -6,9 +6,7 @@
 @using CarBlazor.Components.Datagrid
 @using CarBlazor.Components.FormModal
 @using CarBlazor.DAL.Models
-@using CarBlazor.Services.Services
-@inject WarrantyService WarrantyService
-@inject CarService CarService
+@inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
 @rendermode InteractiveServer
@@ -17,7 +15,7 @@
 
 <h1>Warranties</h1>
 
-<Search Placeholder="Search warranties..." OnSearch="HandleSearch" />
+<Search Placeholder="Search warranties..." OnSearch="HandleSearch"/>
 
 <p>
     <button class="btn btn-primary" @onclick="OpenCreateModal">Create New</button>
@@ -39,7 +37,7 @@ else
 {
     <Datagrid TItem="Warranty" Items="Warranties" Columns="_warrantyColumns" OnRowClick="HandleRowClick">
         <RowActions Context="warranty">
-            <DeleteButton OnClick="@(() => DeleteConfirm(warranty.Id))" />
+            <DeleteButton OnClick="@(() => DeleteConfirm(warranty.Id))"/>
         </RowActions>
     </Datagrid>
 }
@@ -63,7 +61,7 @@ else
                 }
             }
         </InputSelect>
-        <ValidationMessage For="@(() => NewWarranty.CarId)" />
+        <ValidationMessage For="@(() => NewWarranty.CarId)"/>
     </div>
 
     <div class="form-group mb-3">
@@ -77,48 +75,50 @@ else
                 }
             }
         </InputSelect>
-        <ValidationMessage For="@(() => NewWarranty.WarrantyTypeId)" />
+        <ValidationMessage For="@(() => NewWarranty.WarrantyTypeId)"/>
     </div>
 
     <div class="form-group mb-3">
         <label for="provider">Provider</label>
-        <InputText id="provider" @bind-Value="NewWarranty.Provider" class="form-control" />
-        <ValidationMessage For="@(() => NewWarranty.Provider)" />
+        <InputText id="provider" @bind-Value="NewWarranty.Provider" class="form-control"/>
+        <ValidationMessage For="@(() => NewWarranty.Provider)"/>
     </div>
 
     <div class="form-group mb-3">
         <label for="startDate">Start Date</label>
-        <InputDate id="startDate" @bind-Value="NewWarranty.StartDate" class="form-control" />
-        <ValidationMessage For="@(() => NewWarranty.StartDate)" />
+        <InputDate id="startDate" @bind-Value="NewWarranty.StartDate" class="form-control"/>
+        <ValidationMessage For="@(() => NewWarranty.StartDate)"/>
     </div>
 
     <div class="form-group mb-3">
         <label for="endDate">End Date</label>
-        <InputDate id="endDate" @bind-Value="NewWarranty.EndDate" class="form-control" />
-        <ValidationMessage For="@(() => NewWarranty.EndDate)" />
+        <InputDate id="endDate" @bind-Value="NewWarranty.EndDate" class="form-control"/>
+        <ValidationMessage For="@(() => NewWarranty.EndDate)"/>
     </div>
 
     <div class="form-group mb-3">
         <label for="coverageType">Coverage Details</label>
-        <InputText id="coverageType" @bind-Value="NewWarranty.CoverageDetails" class="form-control" />
-        <ValidationMessage For="@(() => NewWarranty.CoverageDetails)" />
+        <InputText id="coverageType" @bind-Value="NewWarranty.CoverageDetails" class="form-control"/>
+        <ValidationMessage For="@(() => NewWarranty.CoverageDetails)"/>
     </div>
 
     <div class="form-group mb-3">
         <label for="cost">Cost</label>
-        <InputNumber id="cost" @bind-Value="NewWarranty.Cost" class="form-control" />
-        <ValidationMessage For="@(() => NewWarranty.Cost)" />
+        <InputNumber id="cost" @bind-Value="NewWarranty.Cost" class="form-control"/>
+        <ValidationMessage For="@(() => NewWarranty.Cost)"/>
     </div>
 </FormModal>
 
 @code {
     private List<Warranty>? Warranties { get; set; }
     private List<Car>? Cars { get; set; }
+
     private Warranty NewWarranty { get; set; } = new()
     {
         StartDate = DateTime.Today,
         EndDate = DateTime.Today.AddYears(3)
     };
+
     private List<WarrantyType>? WarrantyTypes { get; set; }
     private bool IsLoading { get; set; } = true;
     private string? ErrorMessage { get; set; }
@@ -129,9 +129,9 @@ else
     {
         try
         {
-            Warranties = await WarrantyService.GetWarrantiesAsync();
-            Cars = await CarService.GetCarsAsync();
-            WarrantyTypes = await WarrantyService.GetWarrantyTypesAsync();
+            Warranties = await Http.GetFromJsonAsync<List<Warranty>>("api/warranties");
+            Cars = await Http.GetFromJsonAsync<List<Car>>("api/cars");
+            WarrantyTypes = await Http.GetFromJsonAsync<List<WarrantyType>>("api/warranties/types");
         }
         catch (Exception ex)
         {
@@ -162,8 +162,17 @@ else
     {
         try
         {
-            await WarrantyService.CreateWarrantyAsync(warranty);
-            Warranties = await WarrantyService.GetWarrantiesAsync();
+            var response = await Http.PostAsJsonAsync("api/warranties", warranty);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Warranties = await Http.GetFromJsonAsync<List<Warranty>>("api/warranties");
+                CloseModal();
+            }
+            else
+            {
+                ErrorMessage = "Failed to create warranty.";
+            }
         }
         catch (Exception ex)
         {
@@ -175,7 +184,7 @@ else
     {
         try
         {
-            Warranties = await WarrantyService.SearchWarrantiesAsync(searchTerm);
+            Warranties = await Http.GetFromJsonAsync<List<Warranty>>($"api/warranty/search?term={searchTerm}");
         }
         catch (Exception ex)
         {
@@ -196,10 +205,12 @@ else
 
             if (confirmed)
             {
-                var success = await WarrantyService.DeleteWarrantyAsync(id);
-                if (success)
+                var response = await Http.DeleteAsync($"api/warranties/{id}");
+
+                if (response.IsSuccessStatusCode)
                 {
-                    Warranties = await WarrantyService.GetWarrantiesAsync();
+                    Warranties = await Http.GetFromJsonAsync<List<Warranty>>("api/warranties");
+                    ErrorMessage = null;
                 }
                 else
                 {
@@ -212,4 +223,5 @@ else
             ErrorMessage = $"Error deleting warranty: {ex.Message}";
         }
     }
+
 }

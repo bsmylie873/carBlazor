@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace CarBlazor.DAL.Models;
 
@@ -11,5 +12,7 @@ public class Role
     public string Name { get; set; } = string.Empty;
     [Column("description")]
     public string Description { get; set; } = string.Empty;
+    
+    [JsonIgnore]
     public virtual ICollection<User> Users { get; set; } = new List<User>();
 }

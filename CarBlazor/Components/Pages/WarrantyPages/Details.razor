@@ -2,8 +2,7 @@
 @attribute [Authorize(Roles = "Admin,Manager")]
 @using CarBlazor.DAL.Models
 @using Microsoft.AspNetCore.Authorization
-@using CarBlazor.Services.Services
-@inject WarrantyService WarrantyService
+@inject HttpClient Http
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -18,7 +17,7 @@
 
 <div>
     <h4>Warranty</h4>
-    <hr />
+    <hr/>
     @if (Warranty != null)
     {
         <dl class="row">
@@ -57,13 +56,14 @@
     }
     else
     {
-        <p>Warranty not found. <button type="button" class="btn btn-secondary" @onclick="GoBack">Back to List</button></p>
+        <p>Warranty not found.
+            <button type="button" class="btn btn-secondary" @onclick="GoBack">Back to List</button>
+        </p>
     }
 </div>
 
 @code {
-    [Parameter]
-    public int Id { get; set; }
+    [Parameter] public int Id { get; set; }
 
     private Warranty? Warranty { get; set; }
     private bool IsLoading { get; set; } = true;
@@ -73,8 +73,8 @@
     {
         try
         {
-            Warranty = await WarrantyService.GetWarrantyByIdAsync(Id);
-            
+            Warranty = await Http.GetFromJsonAsync<Warranty>($"api/warranties/{Id}");
+
             if (Warranty == null)
             {
                 ErrorMessage = $"Warranty with ID {Id} not found.";
@@ -94,4 +94,5 @@
     {
         Navigation.NavigateTo("warranties");
     }
+
 }

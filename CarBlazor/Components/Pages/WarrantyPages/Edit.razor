@@ -2,9 +2,7 @@
 @attribute [Authorize(Roles = "Admin,Manager")]
 @using CarBlazor.DAL.Models
 @using Microsoft.AspNetCore.Authorization
-@using CarBlazor.Services.Services
-@inject CarService CarService
-@inject WarrantyService WarrantyService
+@inject HttpClient Http
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -121,7 +119,7 @@
     {
         try
         {
-            Warranty = await WarrantyService.GetWarrantyByIdAsync(Id);
+            Warranty = await Http.GetFromJsonAsync<Warranty>($"api/warranties/{Id}");
 
             if (Warranty == null)
             {
@@ -130,9 +128,9 @@
             }
 
             OriginalCarId = Warranty.CarId;
-            
-            Cars = await CarService.GetCarsAsync();
-            WarrantyTypes = await WarrantyService.GetWarrantyTypesAsync();
+
+            Cars = await Http.GetFromJsonAsync<List<Car>>("api/cars");
+            WarrantyTypes = await Http.GetFromJsonAsync<List<WarrantyType>>("api/warranties/types");
         }
         catch (Exception ex)
         {
@@ -150,9 +148,9 @@
         {
             if (Warranty == null) return;
 
-            var updatedWarranty = await WarrantyService.UpdateWarrantyAsync(Warranty);
+            var response = await Http.PutAsJsonAsync($"api/warranties/{Warranty.Id}", Warranty);
 
-            if (updatedWarranty != null)
+            if (response.IsSuccessStatusCode)
             {
                 Navigation.NavigateTo(OriginalCarId.HasValue ? $"cars/details/{OriginalCarId.Value}" : "warranties");
             }
@@ -171,5 +169,4 @@
     {
         Navigation.NavigateTo(OriginalCarId.HasValue ? $"cars/details/{OriginalCarId.Value}" : "warranties");
     }
-
 }

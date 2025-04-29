@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace CarBlazor.ViewModels;
+namespace CarBlazor.Api.ViewModels;
 
 public class LoginViewModel
 {

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace CarBlazor.DAL.Models;
 
@@ -20,6 +21,6 @@ public class Customer
 
     public string FullName => $"{FirstName} {LastName}";
 
-    // Navigation property
+    [JsonIgnore]
     public ICollection<CustomerCar>? CustomerCars { get; set; }
 }

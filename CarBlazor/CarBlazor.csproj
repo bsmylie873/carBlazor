@@ -20,7 +20,6 @@
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
       <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
-      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     </ItemGroup>
 
     <ItemGroup>
@@ -39,7 +38,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\CarBlazor.Services\CarBlazor.Services.csproj" />
+      <ProjectReference Include="..\CarBlazor.Api\CarBlazor.Api.csproj" />
     </ItemGroup>
 
 </Project>
